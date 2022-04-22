@@ -1,0 +1,6 @@
+rootProject.name = 'systems-auth-app'
+
+include("auth-api")
+
+include("auth-data:redis")
+include("auth-data:mongodb")
