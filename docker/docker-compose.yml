@@ -4,27 +4,7 @@ services:
     image: redis:6.2
     container_name: dev-redis
     ports:
-      - 6379:6379
+      - "6379:6379"
     command: redis-server /usr/local/conf/redis.conf
     volumes:
       - ./redis/conf/redis.conf:/usr/local/conf/redis.conf
-  mongo:
-    image: mongo
-    restart: always
-    container_name: dev-mongo
-    ports:
-      - 27017:27017
-    volumes:
-      - ./data/mongo:/data/db
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=systems
-      - MONGO_INITDB_ROOT_PASSWORD=1234
-  mongo-express:
-    image: mongo-express
-    restart: always
-    environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=systems
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=1234
-      - ME_CONFIG_MONGODB_URL=mongodb://systems:1234@mongo:27017/
-    ports:
-      - 8888:8081

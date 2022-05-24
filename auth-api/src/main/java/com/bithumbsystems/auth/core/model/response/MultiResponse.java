@@ -1,14 +1,16 @@
 package com.bithumbsystems.auth.core.model.response;
 
-import com.bithumbsystems.auth.core.model.enums.ReturnCode;
-import lombok.AllArgsConstructor;
+import com.bithumbsystems.auth.core.model.enums.ResultCode;
+import java.util.List;
 import lombok.Getter;
 
-import java.util.List;
-
-@AllArgsConstructor
 @Getter
 public class MultiResponse<T> {
-    private ReturnCode status;
-    private List<T> data;
+    private final ResultCode result;
+    private final List<T> data;
+
+    MultiResponse(List<T> data) {
+        this.result = ResultCode.SUCCESS;
+        this.data = data;
+    }
 }

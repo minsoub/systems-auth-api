@@ -29,25 +29,8 @@
 ## Running the tests
 - Swagger 참고
     - http://127.0.0.1:8080/swagger-ui.html
-- Docker(mongodb)
+- Docker
     - docker-compose.yml
-      mongo
-
-> **docker exec -it dev-mongo bash**
-
-> mongo
-
-> use admin
-
-> db.auth(’systems’,’1234’)
-
-> use test
-
-> db.createUser(
-{	user: "bit",
-pwd: "thumb",
-roles:[{role: "readWrite" , db:"test"}]
-})
 
 ## history
 - 0.0.1 초안 init

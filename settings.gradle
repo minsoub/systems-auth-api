@@ -1,4 +1,4 @@
-rootProject.name = 'systems-auth-app'
+rootProject.name = 'systems-auth-api'
 
 include("auth-api")
 

@@ -2,61 +2,74 @@ server:
   shutdown: graceful
   port: 8080
 spring:
-  profiles:
-    active: ${auth.api.profile:local}
   main:
     allow-bean-definition-overriding: true
   devtools:
     restart:
       enabled: false
-  data:
-    mongodb:
-      host: ${auth.mongo.host:localhost}
-      port: ${auth.mongo.port:27017}
-      database: ${auth.mongo.database:test}
-      username: ${auth.mongo.username:bit}
-      password: ${auth.mongo.password:thumb}
-  redis:
-    host: ${auth.redis.host:localhost}
-    port: ${auth.redis.port:6379}
 
 management:
   endpoints:
     web:
       exposure:
-        include: metrics, prometheus
+        include: metrics, prometheus, health
 
 logging:
   level:
-    root: ${auth.api.logging.level.root:info}
+    root: ${auth.api.logging.level.root:DEBUG}
+    org.springframework.data.convert.CustomConversions: ERROR
     org:
       springframework:
         data:
           mongodb:
             core:
               MongoTemplate: ${auth.api.logging.level.mongo:DEBUG}
-springdoc:
-  version: v1
-  api-docs:
-    groups:
-      enabled: true
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    display-request-duration: true
-    groups-order: DESC
-    operations-sorter: method
-    disable-swagger-default-url: true
-  show-actuator: false
-  pathsToMatch: /auth/**
-  packagesToScan: com.bithumbsystems.auth
+    com:
+      amazonaws:
+        util:
+          EC2MetadataUtils: error
+    io:
+      spring:
+        cloud: INFO
 
 bithumbsystems:
   auth:
-    public-routes: /auth/**,/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**
-  jwt:
-      secret: ${auth.api.jwt.secret:BithumbsystemsSecret}
+    public-routes: /api/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**
+    jwt:
+      secret: ${auth.api.jwt.secret:BithumbsystemsSecretBithumbsystemsSecret}
       expiration:
         access: ${auth.api.jwt.expiration.access:28800}
         refresh: ${auth.api.jwt.expiration.refresh:28800}
 
+
+---
+spring:
+  config:
+    import: classpath:aws-properties.yml, classpath:springdoc.yml
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: test
+  redis:
+    host: ${auth.redis.host:localhost}
+    port: ${auth.redis.port:6379}
+
+---
+spring:
+  config:
+    import: classpath:aws-properties-dev.yml, classpath:springdoc.yml
+    activate:
+      on-profile: dev
+
+---
+spring:
+  config:
+    import: classpath:aws-properties.yml
+    activate:
+      on-profile: prod
+springdoc:
+  api-docs:
+    enabled: false

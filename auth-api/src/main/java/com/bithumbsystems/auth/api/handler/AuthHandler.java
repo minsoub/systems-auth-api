@@ -1,12 +1,12 @@
 package com.bithumbsystems.auth.api.handler;
 
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
-import com.bithumbsystems.auth.core.model.request.AuthRequest;
-import com.bithumbsystems.auth.core.model.request.SignUpRequest;
-import com.bithumbsystems.auth.service.AccountService;
+import com.bithumbsystems.auth.core.model.request.ClientRegisterRequest;
+import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
+import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
+import com.bithumbsystems.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -15,19 +15,26 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AuthHandler {
 
-    private final AccountService accountService;
+    private final AuthService authService;
 
-    public Mono<ServerResponse> login(ServerRequest request) {
-        Mono authRequest = request.bodyToMono(AuthRequest.class);
-        return ServerResponse.ok().body(accountService.login(authRequest), TokenInfo.class);
+    public Mono<ServerResponse> registerClient(ServerRequest request) {
+        Mono<ClientRegisterRequest> clientRegisterRequestMono = request.bodyToMono(ClientRegisterRequest.class);
+        return ServerResponse.ok().body(authService.registerClient(clientRegisterRequestMono), TokenResponse.class);
     }
 
-    public Mono<ServerResponse> signUp(ServerRequest request) {
-        Mono signUpRequest = request.bodyToMono(SignUpRequest.class);
-        return ServerResponse.ok().body(BodyInserters.fromValue(accountService.signUp(signUpRequest)));
+    public Mono<ServerResponse> generateToken(ServerRequest request) {
+        Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
+        return ServerResponse.ok().body(authService.generateToken(authRequest), TokenResponse.class);
     }
 
-    public Mono<ServerResponse> index(ServerRequest request) {
-        return ServerResponse.ok().bodyValue("index");
+    public Mono<ServerResponse> refreshToken(ServerRequest request) {
+        Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
+        return ServerResponse.ok().body(null, TokenInfo.class);
     }
+
+    public Mono<ServerResponse> deleteToken(ServerRequest request) {
+        Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
+        return ServerResponse.ok().body(null, TokenInfo.class);
+    }
+
 }

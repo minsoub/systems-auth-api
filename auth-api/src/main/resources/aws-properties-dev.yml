@@ -1,0 +1,16 @@
+cloud:
+  aws:
+    credentials:
+      profile-name: ${aws.default.profile:dev}
+      instanceProfile: true
+    stack:
+      auto: ${auth.aws.stack.auto:false}
+    region:
+      static: ${auth.aws.region:ap-northeast-2}
+      auto: ${auth.aws.region.auto:false}
+    param-store:
+      enabled: true
+      fail-fast: true
+      prefix: /smartadmin
+      doc-name: docdb
+      redis-name: redis

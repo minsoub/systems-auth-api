@@ -1,12 +1,15 @@
 package com.bithumbsystems.auth.core.model.response;
 
-import com.bithumbsystems.auth.core.model.enums.ReturnCode;
-import lombok.AllArgsConstructor;
+import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import lombok.Getter;
 
-@AllArgsConstructor
 @Getter
 public class SingleResponse<T> {
-    private ReturnCode status;
-    private T data;
+    private final ResultCode result;
+    private final T data;
+
+    public SingleResponse(T data) {
+        this.result = ResultCode.SUCCESS;
+        this.data = data;
+    }
 }

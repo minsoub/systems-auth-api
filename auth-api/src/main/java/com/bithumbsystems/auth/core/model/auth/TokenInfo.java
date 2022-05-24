@@ -12,7 +12,6 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenInfo {
-    private String email;
     private String token;
     private Date issuedAt;
     private Date expiresAt;

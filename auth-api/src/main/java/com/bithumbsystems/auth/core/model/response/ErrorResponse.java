@@ -1,16 +1,19 @@
 package com.bithumbsystems.auth.core.model.response;
 
-import com.bithumbsystems.auth.core.model.enums.ReturnCode;
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.bithumbsystems.auth.api.exception.ErrorData;
+import com.bithumbsystems.auth.core.model.enums.ResultCode;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 public class ErrorResponse {
 
-    ErrorResponse() {
-        this.result = ReturnCode.ERROR;
-    }
+  private final ResultCode result;
+  private final ErrorData data;
 
-    @Schema(description = "응답 결과", nullable = true)
-    ReturnCode result;
+  public ErrorResponse(ErrorData data) {
+    this.result = ResultCode.ERROR;
+    this.data = data;
+  }
 }

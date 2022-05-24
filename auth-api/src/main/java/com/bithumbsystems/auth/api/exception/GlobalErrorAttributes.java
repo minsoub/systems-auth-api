@@ -1,8 +1,8 @@
 package com.bithumbsystems.auth.api.exception;
 
-import com.bithumbsystems.auth.core.model.response.ErrorResponse;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.stereotype.Component;
@@ -13,14 +13,14 @@ import java.util.Map;
 @Component
 @Getter
 @Setter
+@Slf4j
 public class GlobalErrorAttributes extends DefaultErrorAttributes {
-
-    private ErrorResponse errorResponse;
 
     @Override
     public Map<String, Object> getErrorAttributes(ServerRequest request,
                                                   ErrorAttributeOptions options) {
         Map<String, Object> map = super.getErrorAttributes(request, options);
+        map.forEach((key, value) -> log.error("{} {}", key, value));
         return map;
     }
 

@@ -8,7 +8,7 @@ import java.security.Principal;
 @Getter
 @Setter
 public class UserPrincipal implements Principal {
-    private String id;
+    private String clientId;
     private String email;
 
     @Override
