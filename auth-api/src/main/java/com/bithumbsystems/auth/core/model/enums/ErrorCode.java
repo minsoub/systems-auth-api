@@ -8,7 +8,13 @@ import lombok.RequiredArgsConstructor;
 public enum ErrorCode {
   INVALID_CLIENT("client is not registered."),
   EXPIRED_TOKEN("Token expired"),
-  INVALID_TOKEN("Invalid token");
+  INVALID_TOKEN("Invalid token"),
+
+  USER_ACCOUNT_DISABLE("Account disabled"),
+  INVALID_USER_PASSWORD("Invalid user password!"),
+  INVALID_USERNAME("Invalid user name"),
+
+  INVALID_OTP_NUMER("Invalid Otp Digit number (6)");
 
   private final String message;
 }

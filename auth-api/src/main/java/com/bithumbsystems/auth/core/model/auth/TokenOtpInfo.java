@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.core.model.auth;
 
+import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,9 +12,11 @@ import java.util.Date;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenInfo {
-    private String accessToken;
-    private String refreshToken;
+public class TokenOtpInfo {
+    private String clientId;
+    private String email;
+    private String token;
     private Date issuedAt;
     private Date expiresAt;
+    private OtpResponse otpInfo;
 }

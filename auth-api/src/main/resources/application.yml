@@ -36,7 +36,7 @@ bithumbsystems:
   auth:
     public-routes: /api/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**
     jwt:
-      secret: ${auth.api.jwt.secret:BithumbsystemsSecretBithumbsystemsSecret}
+      secret: ${auth.api.jwt.secret:eyJzdWIiOiJtaW5zb3ViQGJpdGh1bWJzeXN0ZW1zLmNvbSIsIm5hbWUiOiJCaXRodW1iU3lzdGVtcyIsImlhdCI6MjA5OTEyMzExMjF9.Lpo86rOQtvBRfVKDGhICUWuZ92rgBIVPM9PVAUiRhAM}
       expiration:
         access: ${auth.api.jwt.expiration.access:28800}
         refresh: ${auth.api.jwt.expiration.refresh:28800}

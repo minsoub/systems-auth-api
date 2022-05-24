@@ -138,6 +138,9 @@ public class AuthTokenRouter {
             .POST("/api/v1/token", authHandler::generateToken)
             .PUT("/api/v1/token", authHandler::refreshToken)
             .DELETE("/api/v1/token", authHandler::deleteToken)
+            .POST("/api/v1/adm/login", authHandler::login)
+            .POST("/api/v1/adm/otp", authHandler::otp)
+            .POST("/api/v1/user/login", authHandler::userLogin)
             .build();
     }
 

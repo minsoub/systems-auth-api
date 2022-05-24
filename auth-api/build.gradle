@@ -33,4 +33,13 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    // https://mvnrepository.com/artifact/de.taimos/totp
+    implementation group: 'de.taimos', name: 'totp', version: '1.0'
+
+    // https://mvnrepository.com/artifact/commons-codec/commons-codec
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
+
+    // https://mvnrepository.com/artifact/com.google.zxing/javase
+    implementation group: 'com.google.zxing', name: 'javase', version: '3.4.1'
 }

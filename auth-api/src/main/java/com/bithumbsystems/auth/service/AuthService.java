@@ -44,7 +44,7 @@ public class AuthService {
                 var tokenInfo = generate(generateTokenInfo)
                     .toBuilder()
                     .build();
-                redisTemplateSample.saveToken(request.getEmail(), tokenInfo.getToken());
+                redisTemplateSample.saveToken(request.getEmail(), tokenInfo.toString());
               return Mono.just(tokenInfo);
             }
         );
