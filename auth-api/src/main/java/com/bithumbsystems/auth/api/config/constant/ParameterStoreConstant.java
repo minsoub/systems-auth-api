@@ -11,4 +11,7 @@ public final class ParameterStoreConstant {
   public static final String REDIS_HOST = "host";
   public static final String REDIS_PORT = "port";
   public static final String REDIS_TOKEN = "token";
+
+  // 고객 관리형 키
+  public static final String KMS_ALIAS_NAME = "key";
 }

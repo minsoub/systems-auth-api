@@ -1,8 +1,16 @@
 package com.bithumbsystems.auth.api.router;
 
 import com.bithumbsystems.auth.api.handler.AuthHandler;
+import com.bithumbsystems.auth.core.model.auth.TokenInfo;
+import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
+import com.bithumbsystems.auth.core.model.request.OtpRequest;
+import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
+import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
+import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.ClientRegisterResponse;
+import com.bithumbsystems.auth.core.model.response.OtpResponse;
+import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -53,7 +61,7 @@ public class AuthTokenRouter {
                 )
             )
         ),
-            @RouterOperation(
+        @RouterOperation(
             path = "/api/v1/token",
             produces = {
                 MediaType.APPLICATION_JSON_VALUE
@@ -130,7 +138,163 @@ public class AuthTokenRouter {
                     ))
                 )
             )
-        )
+        ),
+        @RouterOperation(
+                    path = "/api/v1/adm/login",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "login",
+                    operation = @Operation(
+                            operationId = "login",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = TokenOtpInfo.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = UserRequest.class
+                                    ))
+                            )
+                    )
+        ),
+        @RouterOperation(
+                    path = "/api/v1/adm/otp",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "otp",
+                    operation = @Operation(
+                            operationId = "otp",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = TokenInfo.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = OtpRequest.class
+                                    ))
+                            )
+                    )
+        ),
+            @RouterOperation(
+                    path = "/api/v1/user/login",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "userLogin",
+                    operation = @Operation(
+                            operationId = "userLogin",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = TokenOtpInfo.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = UserRequest.class
+                                    ))
+                            )
+                    )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/user/otp",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "userOtp",
+                    operation = @Operation(
+                            operationId = "userOtp",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = OtpResponse.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = OtpRequest.class
+                                    ))
+                            )
+                    )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/user/join",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "userJoin",
+                    operation = @Operation(
+                            operationId = "userJoin",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = SingleResponse.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = UserJoinRequest.class
+                                    ))
+                            )
+                    )
+            ),
+            @RouterOperation(
+                    path = "/api/v1/authorize",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "tokenValidate",
+                    operation = @Operation(
+                            operationId = "tokenValidate",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = String.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = TokenValidationRequest.class
+                                    ))
+                            )
+                    )
+            ),
     })
     public RouterFunction route() {
         return RouterFunctions.route()
@@ -141,6 +305,9 @@ public class AuthTokenRouter {
             .POST("/api/v1/adm/login", authHandler::login)
             .POST("/api/v1/adm/otp", authHandler::otp)
             .POST("/api/v1/user/login", authHandler::userLogin)
+            .POST("/api/v1/user/otp", authHandler::userOtp)
+            .POST("/api/v1/user/join", authHandler::userJoin)
+            .POST("/api/v1/authorize", authHandler::tokenValidate)
             .build();
     }
 

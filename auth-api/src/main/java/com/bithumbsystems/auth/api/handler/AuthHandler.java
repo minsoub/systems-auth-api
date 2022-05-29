@@ -1,15 +1,17 @@
 package com.bithumbsystems.auth.api.handler;
 
+import ch.qos.logback.core.subst.Token;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
-import com.bithumbsystems.auth.core.model.request.ClientRegisterRequest;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
+import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
+import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.service.AccountService;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.OtpService;
+import com.bithumbsystems.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -25,6 +27,7 @@ public class AuthHandler {
 
     private final AuthService authService;
     private final AccountService accountService;
+    private final UserService userService;
     private final OtpService otpService;
 
 
@@ -49,7 +52,7 @@ public class AuthHandler {
     }
 
     /**
-     * 사용자 로그인 처리
+     * 사용자 로그인 처리 (운영자)
      * 사용자 로그인 후 OTP 처리를 해야 한다.
      *
      * @param request
@@ -57,9 +60,9 @@ public class AuthHandler {
      */
     public Mono<ServerResponse> login(ServerRequest request) {
         log.debug("login called..");
-        Mono authRequest = request.bodyToMono(AuthRequest.class);
+        Mono userRequest = request.bodyToMono(UserRequest.class);
 
-        return ServerResponse.ok().body(accountService.login(authRequest), TokenOtpInfo.class);
+        return ServerResponse.ok().body(accountService.login(userRequest), TokenOtpInfo.class);
 
         //return ServerResponse.ok().body(accountService.login(authRequest), TokenInfo.class);
     }
@@ -87,7 +90,45 @@ public class AuthHandler {
     public Mono<ServerResponse> userLogin(ServerRequest request) {
         Mono userRequest = request.bodyToMono(UserRequest.class);
 
-        return ServerResponse.ok().body(accountService.userlogin(userRequest), TokenInfo.class);
+        return ServerResponse.ok().body(userService.userlogin(userRequest), TokenInfo.class);
     }
 
+
+    /**
+     * QR 바코드를 생성해서 리턴한다. (사용자)
+     *
+     * @param request
+     * @return
+     */
+    public Mono<ServerResponse> userOtp(ServerRequest request) {
+        Mono otpRequest = request.bodyToMono(OtpRequest.class);
+
+        return ServerResponse.ok().body(userService.userOtp(otpRequest), TokenInfo.class);  // BodyInserters.fromValue(otpRequest));
+
+    }
+
+    /**
+     * Token Validation을 체크한다.
+     *
+     * @param request
+     * @return
+     */
+    public Mono<ServerResponse> tokenValidate(ServerRequest request) {
+
+        Mono tokenRequest = request.bodyToMono(TokenValidationRequest.class);
+
+        return ServerResponse.ok().body(authService.tokenValidate(tokenRequest), String.class);
+    }
+
+    /**
+     * 사용자 가입을 처리한다.
+     *
+     * @param request
+     * @return
+     */
+    public Mono<ServerResponse> userJoin(ServerRequest request) {
+        Mono joinRequest = request.bodyToMono(UserJoinRequest.class);
+
+        return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
+    }
 }

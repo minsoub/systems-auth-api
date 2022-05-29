@@ -18,6 +18,13 @@ import reactor.core.publisher.Mono;
 @Log4j2
 public final class JwtVerifyUtil {
 
+    /**
+     * Token Validation check
+     *
+     * @param token
+     * @param secret
+     * @return
+     */
     public static Mono<VerificationResult> check(String token, String secret) {
         log.debug("jwt verify check called.. {}, {}", secret, token);
         return Mono.just(verify(token, secret))
@@ -35,12 +42,13 @@ public final class JwtVerifyUtil {
         return new VerificationResult(claims, token);
     }
 
-    public static Claims getAllClaimsFromToken(String token, String secret) {
+    public static Claims getAllClaimsFromToken(String token, String secret) throws UnauthorizedException {
         log.debug("getAllClaimsFromToken called.. {}, {}", secret, token);
         var apiKeySecretBytes = secret.getBytes();  // DatatypeConverter.parseBase64Binary(secret);
         var signatureAlgorithm = SignatureAlgorithm.HS256;
         var signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
 
+        log.debug("Jwts parseBuild...");
         return Jwts.parserBuilder()
                 .setSigningKey(signingKey)
                 .build()

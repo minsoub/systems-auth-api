@@ -12,4 +12,9 @@ public class SingleResponse<T> {
         this.result = ResultCode.SUCCESS;
         this.data = data;
     }
+
+    public SingleResponse(T data, ResultCode code) {
+        this.result = code;
+        this.data = data;
+    }
 }

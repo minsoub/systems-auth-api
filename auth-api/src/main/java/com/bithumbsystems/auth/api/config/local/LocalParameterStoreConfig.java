@@ -1,11 +1,9 @@
-package com.bithumbsystems.auth.api.config.datasource;
+package com.bithumbsystems.auth.api.config.local;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
-import com.bithumbsystems.auth.api.config.local.CredentialsProvider;
 import com.bithumbsystems.auth.api.config.property.AwsProperties;
 import com.bithumbsystems.auth.api.config.property.MongoProperties;
 import com.bithumbsystems.auth.api.config.property.RedisProperties;
-import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,13 +14,15 @@ import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
 import software.amazon.awssdk.services.ssm.model.GetParameterResponse;
 
+import javax.annotation.PostConstruct;
+
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.*;
 
 @Log4j2
 @Data
-@Profile("dev|prod")
+@Profile("local|default")
 @Configuration
-public class ParameterStoreConfig {
+public class LocalParameterStoreConfig {
 
     private SsmClient ssmClient;
     private MongoProperties mongoProperties;
@@ -45,22 +45,22 @@ public class ParameterStoreConfig {
         log.debug("config store [kms name] => {}", awsProperties.getParamStoreKmsName());
 
         this.ssmClient = SsmClient.builder()
-            //.credentialsProvider(credentialsProvider.getProvider()) // 로컬에서 개발로 붙을때 사용
-            .region(Region.of(awsProperties.getRegion()))
-            .build();
+                .credentialsProvider(credentialsProvider.getProvider()) // 로컬에서 개발로 붙을때 사용
+                .region(Region.of(awsProperties.getRegion()))
+                .build();
 
         this.mongoProperties = new MongoProperties(
-            getParameterValue(awsProperties.getParamStoreDocName(), DB_URL),
-            getParameterValue(awsProperties.getParamStoreDocName(), DB_USER),
-            getParameterValue(awsProperties.getParamStoreDocName(), DB_PASSWORD),
-            getParameterValue(awsProperties.getParamStoreDocName(), DB_PORT),
-            getParameterValue(awsProperties.getParamStoreDocName(), DB_NAME)
+                getParameterValue(awsProperties.getParamStoreDocName(), DB_URL),
+                getParameterValue(awsProperties.getParamStoreDocName(), DB_USER),
+                getParameterValue(awsProperties.getParamStoreDocName(), DB_PASSWORD),
+                getParameterValue(awsProperties.getParamStoreDocName(), DB_PORT),
+                getParameterValue(awsProperties.getParamStoreDocName(), DB_NAME)
         );
 
         this.redisProperties = new RedisProperties(
-            getParameterValue(awsProperties.getParamStoreRedisName(), REDIS_HOST),
-            getParameterValue(awsProperties.getParamStoreRedisName(), REDIS_PORT),
-            getParameterValue(awsProperties.getParamStoreRedisName(), REDIS_TOKEN)
+                getParameterValue(awsProperties.getParamStoreRedisName(), REDIS_HOST),
+                getParameterValue(awsProperties.getParamStoreRedisName(), REDIS_PORT),
+                getParameterValue(awsProperties.getParamStoreRedisName(), REDIS_TOKEN)
         );
 
         // KMS Parameter Key
@@ -71,9 +71,9 @@ public class ParameterStoreConfig {
         String parameterName = String.format("%s/%s_%s/%s", awsProperties.getPrefix(), storeName, profileName, type);
 
         GetParameterRequest request = GetParameterRequest.builder()
-            .name(parameterName)
-            .withDecryption(true)
-            .build();
+                .name(parameterName)
+                .withDecryption(true)
+                .build();
 
         GetParameterResponse response = this.ssmClient.getParameter(request);
 

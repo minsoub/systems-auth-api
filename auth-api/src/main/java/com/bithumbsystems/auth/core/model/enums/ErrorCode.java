@@ -14,7 +14,9 @@ public enum ErrorCode {
   INVALID_USER_PASSWORD("Invalid user password!"),
   INVALID_USERNAME("Invalid user name"),
 
-  INVALID_OTP_NUMER("Invalid Otp Digit number (6)");
+  INVALID_OTP_NUMER("Invalid Otp Digit number (6)"),
+
+  EXISTED_USER("User is existed.");
 
   private final String message;
 }

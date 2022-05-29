@@ -20,4 +20,9 @@ public class AwsProperties {
   @Value("${cloud.aws.param-store.redis-name}")
   private String paramStoreRedisName;
 
+  @Value("${cloud.aws.param-store.kms-name}")
+  private String paramStoreKmsName;
+
+
+
 }

@@ -8,8 +8,10 @@ import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.mapper.ClientMapper;
 import com.bithumbsystems.auth.core.model.request.ClientRegisterRequest;
+import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.ClientRegisterResponse;
+import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.mongodb.client.service.ClientDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 import java.util.Map;
@@ -54,5 +56,17 @@ public class AuthService {
         return clientRegisterRequestMono
             .flatMap(clientRegisterRequest -> clientDomainService.save(ClientMapper.INSTANCE.clientRegisterRequestToClient(clientRegisterRequest)))
             .flatMap(client -> Mono.just(ClientMapper.INSTANCE.clientToClientRegisterResponse(client)));
+    }
+
+    /**
+     * Token Validation 을 체크한다.
+     *
+     * @param tokenValidationRequestMono
+     * @return
+     */
+    public Mono<String> tokenValidate(Mono<TokenValidationRequest> tokenValidationRequestMono) {
+        return tokenValidationRequestMono
+                .flatMap(res -> JwtVerifyUtil.check(res.getToken(), jwtProperties.getSecret())
+                        .map(result -> "Success"));
     }
 }

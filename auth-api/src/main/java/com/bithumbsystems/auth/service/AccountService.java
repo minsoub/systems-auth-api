@@ -10,20 +10,16 @@ import com.bithumbsystems.auth.core.model.enums.TokenType;
 
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
-import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 
-import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccessDomainService;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import com.bithumbsystems.auth.data.mongodb.client.service.ClientDomainService;
 
-import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,20 +29,22 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
-import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generate;
 import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
+/**
+ * 관리자/운영자 위한 인증 관련 클래스
+ */
 @Service
 @Log4j2
 @RequiredArgsConstructor
 public class AccountService {
 
-    //private final AccountDomainService accountDomainService;
     private final AdminAccountDomainService adminAccountDomainService;
     private final AdminAccessDomainService adminAccessDomainService;
-    private final UserAccountDomainService userAccountDomainService;
+
 
     private final OtpService otpService;
+
     private final JwtProperties jwtProperties;
 
     private final ClientDomainService clientDomainService;
@@ -60,11 +58,11 @@ public class AccountService {
     /**
      * 사용자 1차 로그인
      *
-     * @param authRequest
+     * @param userRequest
      * @return
      */
-    public Mono<TokenOtpInfo> login(Mono<AuthRequest> authRequest) {
-        return authRequest.flatMap(request -> authenticate(request.getEmail(), request.getClientPassword()));
+    public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
+        return userRequest.flatMap(request -> authenticate(request.getEmail(), request.getPasswd()));
     }
 
     /**
@@ -74,7 +72,7 @@ public class AccountService {
      * @return
      */
     public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
-        return otpRequest.flatMap(request -> otpvalidation(request));
+        return otpRequest.flatMap(request -> otpService.otpValidation(request, "ADM"));
     }
 
     public Mono<AdminAccount> findByEmail(String email) {
@@ -93,7 +91,7 @@ public class AccountService {
 //    }
 
     /**
-     * 사용자 인증 처리
+     * 사용자 인증 처리 - 1차
      *
      * @param email
      * @param password
@@ -130,57 +128,6 @@ public class AccountService {
     }
 
     /**
-     * OTP 처리
-     * 처리완료 후 토큰정보를 리턴한다.
-     *
-     * @param request
-     * @return
-     */
-    public Mono<TokenInfo> otpvalidation(OtpRequest request) {
-        // Token Validation check and otp no check
-        log.debug("otp validation check start => {}", request);
-        return JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
-                .flatMap(result -> {
-                    // success token validation check
-                    // otp validation check
-                    log.debug("jwt validation check completed : {}", result);
-                    if (otpService.otpCheckCode(request.getOtp_no(), request.getEncode_key())) {
-                        // 2차 토큰 생성
-                        return generateToken(request, result.claims.getIssuer());
-
-                    }else {
-                        return Mono.error(new UnauthorizedException(INVALID_OTP_NUMER));
-                    }
-                });
-    }
-
-    /**
-     * 2차 인증에 대한 토큰 생성 및 저장
-     *
-     * @param request
-     * @param email
-     * @return
-     */
-    public Mono<TokenInfo> generateToken(OtpRequest request, String email) {
-        log.debug("generateToken create......{}", request);
-
-        log.debug("admin_access data => {}", request);
-        GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-                .builder()
-                .secret(jwtProperties.getSecret())
-                .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                .subject( request.getClientId())  // request.getClientId())
-                .issuer(email)
-                .claims(Map.of("ROLE", "OTP"))  // 지금은 인증
-                .build();
-        var tokenInfo = generate(generateTokenInfo)
-                .toBuilder()
-                .build();
-        return redisTemplateSample.saveToken(email, tokenInfo.toString())  // .getAccessToken())
-                .map(result -> tokenInfo);
-
-    }
-    /**
      * 1차 토큰 생성
      * @param account
      * @param tokenType
@@ -198,61 +145,17 @@ public class AccountService {
                             .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
                             .subject( result.getSite_id())  // request.getClientId())
                             .issuer(account.getEmail())
-                            .claims(Map.of("ROLE", "OTP"))  // 지금은 인증
+                            .claims(Map.of("ROLE", result.getRole_management_id()))  // 지금은 인증
                             .build();
 
                     var tokenInfo = generateOtp(generateTokenInfo)
                             .toBuilder()
-                            .clientId(result.getSite_id())
+                            .site_id(result.getSite_id())
                             .build();
-                    redisTemplateSample.saveToken(account.getEmail(), tokenInfo.toString()); // .getToken());
+                    redisTemplateSample.saveToken(account.getEmail()+"::OTP", tokenInfo.toString()).log("result ->save success..").subscribe();
                     return tokenInfo;
                 })
                 .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
     }
 
-    /**
-     * 일반 사용자 로그인 처리
-     * @param userRequest
-     * @return
-     */
-    public Mono<TokenInfo> userlogin(Mono<UserRequest> userRequest) {
-        return userRequest.flatMap(request -> authenticateUser(request.getEmail(), request.getClientPassword(), request.getClientId()));
-    }
-
-    /**
-     * 사용자 토큰 생성
-     *
-     * @param email
-     * @param password
-     * @param clientId
-     * @return
-     */
-    public Mono<TokenInfo> authenticateUser(String email, String password, String clientId) {
-        return userAccountDomainService.findByEmail(email)
-                .flatMap(account -> {
-                    log.debug("result account data => {}", account);
-                    if (account.getStatus().equals("9"))
-                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
-
-                    //if (!passwordEncoder.encode(password).equals(account.getPassword()))
-                    if  (!password.equals(account.getPassword()))
-                        return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
-
-                    GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-                            .builder()
-                            .secret(jwtProperties.getSecret())
-                            .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                            .subject( clientId)
-                            .issuer(email)
-                            .claims(Map.of("ROLE", "USER"))  // 지금은 인증
-                            .build();
-                    var tokenInfo = generate(generateTokenInfo)
-                            .toBuilder()
-                            .build();
-                    return redisTemplateSample.saveToken(email, tokenInfo.toString())  // .getAccessToken())
-                            .map(result -> tokenInfo);
-                })
-                .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
-    }
 }

@@ -13,7 +13,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenOtpInfo {
-    private String clientId;
+    private String site_id;
     private String email;
     private String token;
     private Date issuedAt;

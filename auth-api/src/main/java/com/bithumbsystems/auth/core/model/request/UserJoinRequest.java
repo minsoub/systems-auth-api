@@ -7,9 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OtpRequest {
-    String otp_no;
-    String encode_key;
-    String site_id;
-    String token;
+public class UserJoinRequest {
+    private String email;
+    private String password;
+    private String name;
+    private String phone;
+    private String sns_id;
 }

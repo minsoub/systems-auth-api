@@ -28,6 +28,8 @@ logging:
       amazonaws:
         util:
           EC2MetadataUtils: error
+        encryptionsdk: DEBUG
+
     io:
       spring:
         cloud: INFO

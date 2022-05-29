@@ -13,3 +13,4 @@ cloud:
       prefix: /smartadmin
       doc-name: docdb
       redis-name: redis
+      kms-name: kms
