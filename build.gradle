@@ -4,6 +4,19 @@ plugins {
     id 'java'
 }
 
+bootJar {
+    enabled = true
+    bootJarMainClassName {
+        mainClass = 'com.bithumbsystems.auth.AuthApiApplication'
+    }
+}
+
+bootRun {
+    bootRunMainClassName {
+        mainClass = 'com.bithumbsystems.auth.AuthApiApplication'
+    }
+}
+
 allprojects {
     group = 'com.bithumbsystems'
     version = '0.0.1-SNAPSHOT'
