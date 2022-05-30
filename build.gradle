@@ -7,13 +7,13 @@ plugins {
 bootJar {
     enabled = true
     bootJarMainClassName {
-        mainClass = 'com.bithumbsystems.auth.AuthApiApplication'
+        mainClass = 'com.bithumbsystems.auth.AuthAPIApplication'
     }
 }
 
 bootRun {
     bootRunMainClassName {
-        mainClass = 'com.bithumbsystems.auth.AuthApiApplication'
+        mainClass = 'com.bithumbsystems.auth.AuthAPIApplication'
     }
 }
 
