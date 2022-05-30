@@ -28,7 +28,7 @@ public class ParameterStoreConfig {
     private MongoProperties mongoProperties;
     private RedisProperties redisProperties;
     private final AwsProperties awsProperties;
-    private final CredentialsProvider credentialsProvider;
+    //private final CredentialsProvider credentialsProvider;
 
     private final AwsConfig awsConfig;
 
