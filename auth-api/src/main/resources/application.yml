@@ -58,14 +58,16 @@ spring:
   redis:
     host: ${auth.redis.host:localhost}
     port: ${auth.redis.port:6379}
-
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml
 ---
 spring:
   config:
     import: classpath:aws-properties-dev.yml, classpath:springdoc.yml
     activate:
       on-profile: dev
-
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml
 ---
 spring:
   config:
@@ -75,3 +77,5 @@ spring:
 springdoc:
   api-docs:
     enabled: false
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml

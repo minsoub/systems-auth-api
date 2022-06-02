@@ -13,7 +13,9 @@ COPY ${JAR_FILE} systems-auth-api.jar
 COPY deploy/entrypoint.sh entrypoint.sh
 RUN chmod 755 entrypoint.sh
 RUN mkdir /app/logs
-RUN touch /app/logs/systems-auth-api.log
+RUN mkdir /app/logs/error
+RUN touch /app/logs/spring.log
+RUN touch /app/logs/error/spring-error.log
 
 ARG AWS_ACCESS_KEY_ID
 ARG AWS_SECRET_ACCESS_KEY
