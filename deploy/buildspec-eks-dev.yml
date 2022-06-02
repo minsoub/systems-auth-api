@@ -18,7 +18,7 @@ phases:
       docker: 18
     commands:
       - echo Logging in to Amazon EKS...
-      - curl -o kubectl $ KUBECTL_URL
+      - curl -o kubectl $KUBECTL_URL
       - chmod +x ./kubectl
       - mv ./kubectl /usr/local/bin/kubectl
       - mkdir ~/.kube
