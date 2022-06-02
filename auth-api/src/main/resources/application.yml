@@ -71,7 +71,7 @@ logging:
 ---
 spring:
   config:
-    import: classpath:aws-properties-dev.yml, classpath:springdoc.yml
+    import: classpath:aws-properties-eks-dev.yml, classpath:springdoc.yml
     activate:
       on-profile: eks-dev
 logging:
