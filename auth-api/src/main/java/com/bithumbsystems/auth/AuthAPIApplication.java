@@ -21,7 +21,7 @@ public class AuthAPIApplication {
         SpringApplication.run(AuthAPIApplication.class, args);
     }
 
-    @Profile("dev|prod")
+    @Profile("dev|prod|eks-dev")
     @EnableAutoConfiguration(
         exclude = {
             MongoAutoConfiguration.class,
