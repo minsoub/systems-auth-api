@@ -20,7 +20,7 @@ import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant
 
 @Log4j2
 @Data
-@Profile("dev|prod")
+@Profile("dev|prod|eks-dev")
 @Configuration
 public class ParameterStoreConfig {
 

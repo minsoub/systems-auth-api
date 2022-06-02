@@ -13,5 +13,5 @@ cloud:
       fail-fast: true
       prefix: /smartadmin
       doc-name: docdb
-      redis-name: redis
+      redis-name: docdb
       kms-name: kms

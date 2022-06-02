@@ -71,6 +71,14 @@ logging:
 ---
 spring:
   config:
+    import: classpath:aws-properties-dev.yml, classpath:springdoc.yml
+    activate:
+      on-profile: eks-dev
+logging:
+  config: classpath:logback-spring-dev.xml
+---
+spring:
+  config:
     import: classpath:aws-properties.yml
     activate:
       on-profile: prod

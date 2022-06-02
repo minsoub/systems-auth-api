@@ -16,7 +16,7 @@ import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 
 @Configuration
 @RequiredArgsConstructor
-@Profile("dev|prod")
+@Profile("dev|prod|eks-dev")
 public class RedisConfig {
 
   private final ParameterStoreConfig parameterStoreConfig;

@@ -25,7 +25,7 @@ import org.springframework.data.mongodb.config.AbstractReactiveMongoConfiguratio
 
 @Slf4j
 @Configuration
-@Profile("dev|prod")
+@Profile("dev|prod|eks-dev")
 @RequiredArgsConstructor
 public class MongoConfig extends AbstractReactiveMongoConfiguration {
 

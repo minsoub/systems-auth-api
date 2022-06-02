@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    SPRING_PROFILE: "dev"
+    SPRING_PROFILE: "eks-dev"
     REPO_URI: "807380035085.dkr.ecr.ap-northeast-2.amazonaws.com/systems-auth-api-dev-repo"
     CONTAINER_NAME: "systems-auth-api-dev-container"
     JAR_FILE_NAME: "./auth-api/build/libs/auth-api-0.0.1-SNAPSHOT.jar"
