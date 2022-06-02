@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: systems-auth-api
-  namespace: #NAMESPACE#
+  namespace: NAMESPACE
   labels:
     app: systems-auth-api
 spec:
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: systems-auth-api
-          image: #AWS_ECR_URI#
+          image: AWS_ECR_URI
           ports:
             - containerPort: 8080
           resources: {}
