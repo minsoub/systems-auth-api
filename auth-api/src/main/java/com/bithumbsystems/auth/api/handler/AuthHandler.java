@@ -21,6 +21,9 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+/**
+ * The type Auth handler.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -32,36 +35,59 @@ public class AuthHandler {
     private final OtpService otpService;
 
 
+    /**
+     * Register client mono.
+     *
+     * @param request the request
+     * @return the mono
+     */
     public Mono<ServerResponse> registerClient(ServerRequest request) {
         Mono<ClientRegisterRequest> clientRegisterRequestMono = request.bodyToMono(ClientRegisterRequest.class);
         return ServerResponse.ok().body(authService.registerClient(clientRegisterRequestMono), TokenResponse.class);
     }
 
+    /**
+     * Generate token mono.
+     *
+     * @param request the request
+     * @return the mono
+     */
     public Mono<ServerResponse> generateToken(ServerRequest request) {
         Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
         return ServerResponse.ok().body(authService.generateToken(authRequest), TokenResponse.class);
     }
 
+    /**
+     * Refresh token mono.
+     *
+     * @param request the request
+     * @return the mono
+     */
     public Mono<ServerResponse> refreshToken(ServerRequest request) {
         Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
         return ServerResponse.ok().body(null, TokenInfo.class);
     }
 
+    /**
+     * Delete token mono.
+     *
+     * @param request the request
+     * @return the mono
+     */
     public Mono<ServerResponse> deleteToken(ServerRequest request) {
         Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
         return ServerResponse.ok().body(null, TokenInfo.class);
     }
 
     /**
-     * 사용자 로그인 처리 (운영자)
-     * 사용자 로그인 후 OTP 처리를 해야 한다.
+     * 사용자 로그인 처리 (운영자) 사용자 로그인 후 OTP 처리를 해야 한다.
      *
-     * @param request
-     * @return
+     * @param request the request
+     * @return mono
      */
     public Mono<ServerResponse> login(ServerRequest request) {
         log.debug("login called..");
-        Mono userRequest = request.bodyToMono(UserRequest.class);
+        Mono<UserRequest> userRequest = request.bodyToMono(UserRequest.class);
 
         return ServerResponse.ok().body(accountService.login(userRequest), TokenOtpInfo.class);
 
@@ -71,11 +97,11 @@ public class AuthHandler {
     /**
      * QR 바코드를 생성해서 리턴한다.
      *
-     * @param request
-     * @return
+     * @param request the request
+     * @return mono
      */
     public Mono<ServerResponse> otp(ServerRequest request) {
-        Mono otpRequest = request.bodyToMono(OtpRequest.class);
+        Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
 
         return ServerResponse.ok().body(accountService.otp(otpRequest), TokenInfo.class);  // BodyInserters.fromValue(otpRequest));
 
@@ -85,11 +111,11 @@ public class AuthHandler {
     /**
      * 일반 사용자 로그인 인증 처리
      *
-     * @param request
-     * @return
+     * @param request the request
+     * @return mono
      */
     public Mono<ServerResponse> userLogin(ServerRequest request) {
-        Mono userRequest = request.bodyToMono(UserRequest.class);
+        Mono<UserRequest> userRequest = request.bodyToMono(UserRequest.class);
 
         return ServerResponse.ok().body(userService.userLogin(userRequest), TokenInfo.class);
     }
@@ -98,11 +124,11 @@ public class AuthHandler {
     /**
      * QR 바코드를 생성해서 리턴한다. (사용자)
      *
-     * @param request
-     * @return
+     * @param request the request
+     * @return mono
      */
     public Mono<ServerResponse> userOtp(ServerRequest request) {
-        Mono otpRequest = request.bodyToMono(OtpRequest.class);
+        Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
 
         return ServerResponse.ok().body(userService.userOtp(otpRequest), TokenInfo.class);  // BodyInserters.fromValue(otpRequest));
 
@@ -111,12 +137,12 @@ public class AuthHandler {
     /**
      * Token Validation을 체크한다.
      *
-     * @param request
-     * @return
+     * @param request the request
+     * @return mono
      */
     public Mono<ServerResponse> tokenValidate(ServerRequest request) {
 
-        Mono tokenRequest = request.bodyToMono(TokenValidationRequest.class);
+        Mono<TokenValidationRequest> tokenRequest = request.bodyToMono(TokenValidationRequest.class);
 
         return ServerResponse.ok().body(authService.tokenValidate(tokenRequest), String.class);
     }
@@ -124,11 +150,11 @@ public class AuthHandler {
     /**
      * 사용자 가입을 처리한다.
      *
-     * @param request
-     * @return
+     * @param request the request
+     * @return mono
      */
     public Mono<ServerResponse> userJoin(ServerRequest request) {
-        Mono joinRequest = request.bodyToMono(UserJoinRequest.class);
+        Mono<UserJoinRequest> joinRequest = request.bodyToMono(UserJoinRequest.class);
 
         return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
     }

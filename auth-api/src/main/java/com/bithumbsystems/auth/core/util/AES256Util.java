@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.core.util;
 
+import java.nio.charset.StandardCharsets;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 
@@ -30,8 +31,8 @@ public class AES256Util {
         }
 
         try {
-            byte[] keyBytes = keyString.getBytes("UTF-8");
-            byte[] plainTextBytes = plainText.getBytes("UTF-8");
+            byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
+            byte[] plainTextBytes = plainText.getBytes(StandardCharsets.UTF_8);
 
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             int bsize = cipher.getBlockSize();
@@ -44,7 +45,7 @@ public class AES256Util {
             if (bUrlSafe) {
                 cipherText = Base64.encodeBase64URLSafeString(encrypted);
             } else {
-                cipherText = new String(Base64.encodeBase64(encrypted), "UTF-8");
+                cipherText = new String(Base64.encodeBase64(encrypted), StandardCharsets.UTF_8);
             }
 
         } catch (Exception e) {
@@ -75,8 +76,8 @@ public class AES256Util {
         }
 
         try {
-            byte[] keyBytes = keyString.getBytes("UTF-8");
-            byte[] cipherTextBytes = Base64.decodeBase64(cipherText.getBytes("UTF-8"));
+            byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
+            byte[] cipherTextBytes = Base64.decodeBase64(cipherText.getBytes(StandardCharsets.UTF_8));
 
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             int bsize = cipher.getBlockSize();
@@ -86,7 +87,7 @@ public class AES256Util {
             cipher.init(Cipher.DECRYPT_MODE, secureKey, ivspec);
             byte[] decrypted = cipher.doFinal(cipherTextBytes);
 
-            plainText = new String(decrypted, "UTF-8");
+            plainText = new String(decrypted, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
             plainText = "";

@@ -51,7 +51,7 @@ public class UserService {
      * @return
      */
     public Mono<TokenOtpInfo> userLogin(Mono<UserRequest> userRequest) {
-        return userRequest.flatMap(request -> authenticateUser(request.getEmail(), request.getPasswd(), request.getSite_id()));
+        return userRequest.flatMap(request -> authenticateUser(request.getEmail(), request.getPasswd(), request.getSiteId()));
     }
 
     /**
@@ -106,7 +106,7 @@ public class UserService {
                     .name(name)    // config.encrypt(req.getName()))
                     .password(passwordEncoder.encode(req.getPassword()))
                     .phone(phone)  // config.encrypt(req.getPhone()))
-                    .snsId(req.getSns_id())
+                    .snsId(req.getSnsId())
                     .status("NORMAL")
                     .createDate(LocalDateTime.now())
                     .createAccountId("admin")
@@ -149,7 +149,7 @@ public class UserService {
                                 if (StringUtils.isEmpty(account.getOtpSecretKey())) {
                                     // otp_secret_key 등록.
                                     log.debug("otp secret key is null => save data");
-                                    account.setOtpSecretKey(result.getOtpInfo().getEncode_key());
+                                    account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
                                     account.setLastLoginDate(LocalDateTime.now());
                                     userAccountDomainService.save(account).then().log("result completed...").subscribe();
                                 }
@@ -173,18 +173,18 @@ public class UserService {
                 .map(result -> {
                     log.debug("admin_access data => {}", result);
                     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-                            .builder()
-                            .secret(jwtProperties.getSecret())
-                            .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                            .subject( clientId)  // request.getClientId())
-                            .issuer(account.getEmail())
-                            .claims(Map.of("ROLE", "OTP"))  // 지금은 인증
-                            .build();
+                        .builder()
+                        .secret(jwtProperties.getSecret())
+                        .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
+                        .subject(clientId)  // request.getClientId())
+                        .issuer(account.getEmail())
+                        .claims(Map.of("ROLE", "OTP"))  // 지금은 인증
+                        .build();
 
                     var tokenInfo = generateOtp(generateTokenInfo)
-                            .toBuilder()
-                            .site_id(clientId)
-                            .build();
+                        .toBuilder()
+                        .siteId(clientId)
+                        .build();
                     redisTemplateSample.saveToken(account.getEmail()+"::OTP", tokenInfo.toString()).log("result ->save success..").subscribe();
                     return tokenInfo;
                 })

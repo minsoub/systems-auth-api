@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TokenValidationRequest {
     private String token;
-    private String user_ip;
-    private String site_id;
+    private String userIp;
+    private String siteId;
 }

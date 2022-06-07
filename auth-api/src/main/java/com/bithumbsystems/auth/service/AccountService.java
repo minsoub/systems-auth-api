@@ -1,6 +1,7 @@
 package com.bithumbsystems.auth.service;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
 import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
@@ -51,29 +52,35 @@ public class AccountService {
 
     //private final AccountMapper accountMapper;
 
-    /**
-     * 사용자 1차 로그인
-     *
-     * @param userRequest
-     * @return
-     */
-    public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
+  /**
+   * 사용자 1차 로그인
+   *
+   * @param userRequest the user request
+   * @return mono
+   */
+  public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
         return userRequest.flatMap(request -> authenticate(request.getEmail(), request.getPasswd()));
     }
 
-    /**
-     * 사용자 2차 로그인 (otp 로그인)
-     *
-     * @param otpRequest
-     * @return
-     */
-    public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
+  /**
+   * 사용자 2차 로그인 (otp 로그인)
+   *
+   * @param otpRequest the otp request
+   * @return mono
+   */
+  public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
         return otpRequest.flatMap(request -> otpService.otpValidation(request, "ADM"));
     }
 
-    public Mono<AdminAccount> findByEmail(String email) {
+  /**
+   * Find by email mono.
+   *
+   * @param email the email
+   * @return the mono
+   */
+  public Mono<AdminAccount> findByEmail(String email) {
         return adminAccountDomainService.findByEmail(email)
-                .switchIfEmpty(Mono.error( new UnauthorizedException(INVALID_USERNAME)));
+                .switchIfEmpty(Mono.error( new UnauthorizedException(INVALID_USER)));
     }
 
 //    public Mono<SignUpResponse> signUp(Mono<SignUpRequest> signUpRequest) {
@@ -86,15 +93,16 @@ public class AccountService {
 //
 //    }
 
-    /**
-     * 사용자 인증 처리 - 1차
-     *
-     * @param email
-     * @param password
-     * @return
-     */
-    public Mono<TokenOtpInfo> authenticate(String email, String password) {
+  /**
+   * 사용자 인증 처리 - 1차
+   *
+   * @param email    the email
+   * @param password the password
+   * @return mono
+   */
+  public Mono<TokenOtpInfo> authenticate(String email, String password) {
         return findByEmail(email)
+            .log()
                 .flatMap(account -> {
                     log.debug("result account data => {}", account);
                     if (account.getStatus().equals("9"))
@@ -113,23 +121,24 @@ public class AccountService {
                                 if (StringUtils.isEmpty(account.getOtpSecretKey())) {
                                     // otp_secret_key 등록.
                                     log.debug("otp secret key is null => save data");
-                                    account.setOtpSecretKey(result.getOtpInfo().getEncode_key());
+                                    account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
                                     account.setLastLoginDate(LocalDateTime.now());
                                     adminAccountDomainService.save(account).then().log("result completed...").subscribe();
                                 }
                                 return result;
                             });
                 })
-                .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
+                .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
     }
 
-    /**
-     * 1차 토큰 생성
-     * @param account
-     * @param tokenType
-     * @return
-     */
-    public Mono<TokenOtpInfo> generateTokenOne(AdminAccount account, TokenType tokenType) {
+  /**
+   * 1차 토큰 생성
+   *
+   * @param account   the account
+   * @param tokenType the token type
+   * @return mono
+   */
+  public Mono<TokenOtpInfo> generateTokenOne(AdminAccount account, TokenType tokenType) {
 
         log.debug("generateTokenOne create......{}", account.getId());
         return adminAccessDomainService.findByAdminId(account.getId())
@@ -146,12 +155,12 @@ public class AccountService {
 
                     var tokenInfo = generateOtp(generateTokenInfo)
                             .toBuilder()
-                            .site_id(result.getSiteId())
+                            .siteId(result.getSiteId())
                             .build();
                     redisTemplateSample.saveToken(account.getEmail()+"::OTP", tokenInfo.toString()).log("result ->save success..").subscribe();
                     return tokenInfo;
                 })
-                .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
+                .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
     }
 
 }

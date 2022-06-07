@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserRequest {
-    private String site_id;
+    private String siteId;
     private String passwd;
     private String email;
 }

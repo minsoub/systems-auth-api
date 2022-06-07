@@ -111,7 +111,7 @@ public class OtpService {
 
         //Mono<OtpResponse> res = Mono.just(OtpResponse.builder().encode_key(encodedKey).url(url).build());
 
-        OtpResponse res = OtpResponse.builder().encode_key(encodedKey).url(url).build();
+        OtpResponse res = OtpResponse.builder().encodeKey(encodedKey).url(url).build();
 
         log.debug("OptResponse generate => {}", res);
 

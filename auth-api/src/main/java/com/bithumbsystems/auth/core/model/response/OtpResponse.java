@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OtpResponse {
-    private String encode_key;
+    private String encodeKey;
     private String url;
 }

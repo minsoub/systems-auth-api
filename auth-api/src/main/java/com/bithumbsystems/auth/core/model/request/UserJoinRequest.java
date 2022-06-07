@@ -12,5 +12,5 @@ public class UserJoinRequest {
     private String password;
     private String name;
     private String phone;
-    private String sns_id;
+    private String snsId;
 }
