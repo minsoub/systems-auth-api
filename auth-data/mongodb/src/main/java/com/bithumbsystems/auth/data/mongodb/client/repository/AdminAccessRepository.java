@@ -9,9 +9,7 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface AdminAccessRepository extends ReactiveMongoRepository<AdminAccess, String> {
 
-
-
      @Query("{ 'admin_account_id' : ?0 }")
-     Mono<AdminAccess> findByAdmin_account_id(String admin_account_id) ;
+     Mono<AdminAccess> findByAdminAccountId(String adminAccountId) ;
 
 }

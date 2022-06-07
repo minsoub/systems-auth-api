@@ -17,14 +17,14 @@ public class UserAccount {
     private String id;
     private String email;
     private String password;
-    private LocalDateTime last_login_date;
+    private LocalDateTime lastLoginDate;
     private String name;
     private String phone;
-    private String sns_id;
+    private String snsId;
     private String status;
-    private String otp_secret_key;
-    private LocalDateTime create_date;
-    private String create_account_id;
-    private LocalDateTime update_date;
-    private String update_account_id;
+    private String otpSecretKey;
+    private LocalDateTime createDate;
+    private String createAccountId;
+    private LocalDateTime updateDate;
+    private String updateAccountId;
 }

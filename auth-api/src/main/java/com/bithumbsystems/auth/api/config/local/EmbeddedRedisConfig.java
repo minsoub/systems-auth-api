@@ -1,4 +1,4 @@
-package com.bithumbsystems.auth.api.config.datasource;
+package com.bithumbsystems.auth.api.config.local;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;

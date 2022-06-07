@@ -15,14 +15,14 @@ import java.time.LocalDateTime;
 public class AdminAccess {
     @Id
     private String id;
-    private String admin_account_id;
+    private String adminAccountId;
     private String name;
     private String email;
-    private boolean is_use;
-    private String role_management_id;
-    private String site_id;
-    private LocalDateTime create_date;
-    private String create_admin_account_id;
-    private LocalDateTime update_date;
-    private String update_admin_account_id;
+    private Boolean isUse;
+    private String roleManagementId;
+    private String siteId;
+    private LocalDateTime createDate;
+    private String createAdminAccountId;
+    private LocalDateTime updateDate;
+    private String updateAdminAccountId;
 }

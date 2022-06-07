@@ -1,5 +1,7 @@
 package com.bithumbsystems.auth.service;
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMER;
+
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
@@ -10,24 +12,20 @@ import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Base32;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Random;
-
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMER;
-import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generate;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
@@ -51,7 +49,7 @@ public class OtpService {
                     // success token validation check
                     // otp validation check
                     log.debug("jwt validation check completed : {}", result);
-                    if (otpCheckCode(request.getOtp_no(), request.getEncode_key())) {
+                    if (otpCheckCode(request.getOtpNo(), request.getEncodeKey())) {
                         // 2차 토큰 생성
                         log.debug("2차 토큰 생성");
                         return generateToken(request, result.claims.getIssuer(), userType, result.claims.get("ROLE").toString());
@@ -79,7 +77,7 @@ public class OtpService {
                 .builder()
                 .secret(jwtProperties.getSecret())
                 .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                .subject( request.getSite_id())  // request.getClientId())
+                .subject(request.getSiteId())  // request.getClientId())
                 .issuer(email)
                 .claims(Map.of("ROLE", role))  // 운영자에 대한 Role이 필요.
                 .build();
@@ -100,14 +98,14 @@ public class OtpService {
      * @return
      */
     //public Mono<OtpResponse> generate(String email) {
-    public OtpResponse generate(String email, String opt_secret_key) {
+    public OtpResponse generate(String email, String optSecretKey) {
         byte[] buffer = new byte[5 + 5 * 5];
         new Random().nextBytes(buffer);
         Base32 codec = new Base32();
         byte[] secretKey = Arrays.copyOf(buffer, 10);
         byte[] bEncodedKey = codec.encode(secretKey);
 
-        String encodedKey = StringUtils.isEmpty(opt_secret_key) ? new String (bEncodedKey) : opt_secret_key;
+        String encodedKey = StringUtils.isEmpty(optSecretKey) ? new String (bEncodedKey) : optSecretKey;
         String[] arrData = email.split("@");
         String url = getQRBarcodeURL(arrData[0], arrData[1], encodedKey);
 

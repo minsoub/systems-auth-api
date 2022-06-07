@@ -7,6 +7,11 @@ spring:
   devtools:
     restart:
       enabled: false
+  data:
+    mongodb:
+      auto-index-creation: true
+      uuid-representation: standard
+      field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
 
 management:
   endpoints:

@@ -1,13 +1,15 @@
 package com.bithumbsystems.auth.api.handler;
 
-import ch.qos.logback.core.subst.Token;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
-import com.bithumbsystems.auth.core.model.request.*;
+import com.bithumbsystems.auth.core.model.request.ClientRegisterRequest;
+import com.bithumbsystems.auth.core.model.request.OtpRequest;
+import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
+import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
+import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
-import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.service.AccountService;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.OtpService;
@@ -15,7 +17,6 @@ import com.bithumbsystems.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
@@ -90,7 +91,7 @@ public class AuthHandler {
     public Mono<ServerResponse> userLogin(ServerRequest request) {
         Mono userRequest = request.bodyToMono(UserRequest.class);
 
-        return ServerResponse.ok().body(userService.userlogin(userRequest), TokenInfo.class);
+        return ServerResponse.ok().body(userService.userLogin(userRequest), TokenInfo.class);
     }
 
 

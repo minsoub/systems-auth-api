@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 public class AdminAccessService {
     private final AdminAccessDomainService service;
 
-    public Mono<AdminAccess> findByAdminId(String admin_account_id) {
-        return service.findByAdminId(admin_account_id);
+    public Mono<AdminAccess> findByAdminId(String adminAccountId) {
+        return service.findByAdminId(adminAccountId);
     }
 }

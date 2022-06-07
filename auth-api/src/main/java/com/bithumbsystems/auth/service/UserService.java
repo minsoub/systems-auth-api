@@ -1,6 +1,12 @@
 package com.bithumbsystems.auth.service;
 
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
+
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.ErrorData;
@@ -8,7 +14,6 @@ import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
-import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
@@ -16,23 +21,17 @@ import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
-import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
+import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.time.LocalDateTime;
-import java.util.Map;
-
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
-import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generate;
-import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 @Service
 @Log4j2
@@ -51,7 +50,7 @@ public class UserService {
      * @param userRequest
      * @return
      */
-    public Mono<TokenOtpInfo> userlogin(Mono<UserRequest> userRequest) {
+    public Mono<TokenOtpInfo> userLogin(Mono<UserRequest> userRequest) {
         return userRequest.flatMap(request -> authenticateUser(request.getEmail(), request.getPasswd(), request.getSite_id()));
     }
 
@@ -107,10 +106,10 @@ public class UserService {
                     .name(name)    // config.encrypt(req.getName()))
                     .password(passwordEncoder.encode(req.getPassword()))
                     .phone(phone)  // config.encrypt(req.getPhone()))
-                    .sns_id(req.getSns_id())
+                    .snsId(req.getSns_id())
                     .status("NORMAL")
-                    .create_date(LocalDateTime.now())
-                    .create_account_id("admin")
+                    .createDate(LocalDateTime.now())
+                    .createAccountId("admin")
                     .build();
 
             log.debug("user account data : {}", user);
@@ -145,13 +144,13 @@ public class UserService {
                             .map(result -> {
                                 log.debug("generateToken => {}", result);
                                 result.setEmail(email);  // account.getEmail());
-                                result.setOtpInfo(otpService.generate(email, account.getOtp_secret_key()));  // account.getEmail(), account.getOtp_secret_key()));
+                                result.setOtpInfo(otpService.generate(email, account.getOtpSecretKey()));  // account.getEmail(), account.getOtp_secret_key()));
 
-                                if (StringUtils.isEmpty(account.getOtp_secret_key())) {
+                                if (StringUtils.isEmpty(account.getOtpSecretKey())) {
                                     // otp_secret_key 등록.
                                     log.debug("otp secret key is null => save data");
-                                    account.setOtp_secret_key(result.getOtpInfo().getEncode_key());
-                                    account.setLast_login_date(LocalDateTime.now());
+                                    account.setOtpSecretKey(result.getOtpInfo().getEncode_key());
+                                    account.setLastLoginDate(LocalDateTime.now());
                                     userAccountDomainService.save(account).then().log("result completed...").subscribe();
                                 }
                                 return result;

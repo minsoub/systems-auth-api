@@ -11,8 +11,7 @@ import reactor.core.publisher.Mono;
 public class AdminAccessDomainService {
     private final AdminAccessRepository repository;
 
-
-    public Mono<AdminAccess> findByAdminId(String admin_id) {
-        return repository.findByAdmin_account_id(admin_id);
+    public Mono<AdminAccess> findByAdminId(String adminId) {
+        return repository.findByAdminAccountId(adminId);
     }
 }

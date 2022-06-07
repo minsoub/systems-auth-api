@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OtpRequest {
-    String otp_no;
-    String encode_key;
-    String site_id;
+    String otpNo;
+    String encodeKey;
+    String siteId;
     String token;
 }

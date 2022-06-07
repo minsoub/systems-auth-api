@@ -20,13 +20,13 @@ public class AdminAccount {
     private String name;
     private String email;
     private String password;
-    private String old_password;
-    private String otp_secret_key;
+    private String oldPassword;
+    private String otpSecretKey;
     private String status;
-    private LocalDateTime last_login_date;
-    private LocalDateTime last_password_update_date;
-    private LocalDateTime create_date;
-    private String create_admin_account_id;
-    private LocalDateTime update_date;
-    private String update_admin_account_id;
+    private LocalDateTime lastLoginDate;
+    private LocalDateTime lastPasswordUpdateDate;
+    private LocalDateTime createDate;
+    private String createAdminAccountId;
+    private LocalDateTime updateDate;
+    private String updateAdminAccountId;
 }
