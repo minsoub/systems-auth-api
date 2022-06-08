@@ -145,18 +145,18 @@ public class AccountService {
                 .map(result -> {
                     log.debug("admin_access data => {}", result);
                     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-                            .builder()
-                            .secret(jwtProperties.getSecret())
-                            .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                            .subject(result.getSiteId())  // request.getClientId())
-                            .issuer(account.getEmail())
-                            .claims(Map.of("ROLE", result.getRoleManagementId()))  // 지금은 인증
-                            .build();
+                        .builder()
+                        .secret(jwtProperties.getSecret())
+                        .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
+                        .subject(result.getSiteId())  // request.getClientId())
+                        .issuer(account.getEmail())
+                        .claims(Map.of("ROLE", result.getRoleManagementId(), "account_id", account.getId()))  // 지금은 인증
+                        .build();
 
                     var tokenInfo = generateOtp(generateTokenInfo)
-                            .toBuilder()
-                            .siteId(result.getSiteId())
-                            .build();
+                        .toBuilder()
+                        .siteId(result.getSiteId())
+                        .build();
                     redisTemplateSample.saveToken(account.getEmail()+"::OTP", tokenInfo.toString()).log("result ->save success..").subscribe();
                     return tokenInfo;
                 })
