@@ -14,6 +14,7 @@ import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccessDomainService;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
@@ -59,7 +60,11 @@ public class AccountService {
    * @return mono
    */
   public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
-        return userRequest.flatMap(request -> authenticate(request.getEmail(), request.getPasswd()));
+        return userRequest.flatMap(request -> authenticate(
+                AES256Util.decryptAES( AES256Util.CLIENT_AES_KEY_ADM, request.getEmail() )
+                , AES256Util.decryptAES( AES256Util.CLIENT_AES_KEY_ADM, request.getPasswd() )
+                )
+        );
     }
 
   /**

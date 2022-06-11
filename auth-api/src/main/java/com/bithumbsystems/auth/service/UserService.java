@@ -51,7 +51,12 @@ public class UserService {
      * @return
      */
     public Mono<TokenOtpInfo> userLogin(Mono<UserRequest> userRequest) {
-        return userRequest.flatMap(request -> authenticateUser(request.getEmail(), request.getPasswd(), request.getSiteId()));
+        return userRequest.flatMap(request -> authenticateUser(
+                AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
+                , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
+                , request.getSiteId()
+                )
+        );
     }
 
     /**
