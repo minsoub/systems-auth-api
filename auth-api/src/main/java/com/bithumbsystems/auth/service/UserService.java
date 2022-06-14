@@ -17,6 +17,7 @@ import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
+import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
@@ -45,6 +46,8 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final CaptchaService captchaService;
+
     /**
      * 일반 사용자 로그인 처리 - 1차 로그인
      * @param userRequest
@@ -57,6 +60,27 @@ public class UserService {
                 , request.getSiteId()
                 )
         );
+    }
+
+    /**
+     * 일반 사용자 로그인 처리 - 1차 로그인 with captcha
+     * @param userCaptchaRequest
+     * @return
+     */
+    public Mono<TokenOtpInfo> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
+        return userCaptchaRequest.flatMap(request -> {
+            return captchaService.doVerify(request.getCaptcha())
+                    .flatMap(result -> {
+                        if (result) {
+                            return authenticateUser(
+                                    AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
+                                    , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
+                                    , request.getSiteId()
+                            );
+                        }
+                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                    });
+        }).switchIfEmpty(Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE)));
     }
 
     /**
