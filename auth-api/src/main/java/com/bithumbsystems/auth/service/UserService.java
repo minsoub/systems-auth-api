@@ -169,6 +169,7 @@ public class UserService {
                     return generateTokenOne(account, TokenType.ACCESS, clientId)
                             .map(result -> {
                                 log.debug("generateToken => {}", result);
+                                result.setId(account.getId());
                                 result.setEmail(email);  // account.getEmail());
                                 result.setOtpInfo(otpService.generate(email, account.getOtpSecretKey()));  // account.getEmail(), account.getOtp_secret_key()));
 

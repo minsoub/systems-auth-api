@@ -19,4 +19,5 @@ public class TokenOtpInfo {
     private Date issuedAt;
     private Date expiresAt;
     private OtpResponse otpInfo;
+    private String id;
 }
