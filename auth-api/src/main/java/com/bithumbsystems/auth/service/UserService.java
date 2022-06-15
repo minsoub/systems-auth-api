@@ -1,10 +1,7 @@
 package com.bithumbsystems.auth.service;
 
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
@@ -76,11 +73,11 @@ public class UserService {
                                     AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
                                     , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
                                     , request.getSiteId()
-                            );
+                            ).switchIfEmpty(Mono.error(new UnauthorizedException(AUTHENTICATION_FAIL)));
                         }
-                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                        return Mono.error(new UnauthorizedException(CAPTCHA_FAIL));
                     });
-        }).switchIfEmpty(Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE)));
+        });
     }
 
     /**

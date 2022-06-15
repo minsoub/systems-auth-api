@@ -2,6 +2,7 @@ package com.bithumbsystems.auth.core.model.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 
 @RequiredArgsConstructor
 @Getter
@@ -18,7 +19,11 @@ public enum ErrorCode {
 
   INVALID_OTP_NUMER("Invalid Otp Digit number (6)"),
 
-  EXISTED_USER("User is existed.");
+  EXISTED_USER("User is existed."),
+
+  CAPTCHA_FAIL("Fail captcha verify"),
+
+  AUTHENTICATION_FAIL("Fail Authentication");
 
   private final String message;
 }
