@@ -204,8 +204,9 @@ public class UserService {
                         .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
                         .subject(clientId)  // request.getClientId())
                         .issuer(account.getEmail())
-                        .claims(Map.of("ROLE", "OTP"))  // 지금은 인증
-                        .build();
+                            .claims(Map.of("ROLE", "USER", "account_id", account.getId()))  // 지금은 인증
+
+                            .build();
 
                     var tokenInfo = generateOtp(generateTokenInfo)
                         .toBuilder()
