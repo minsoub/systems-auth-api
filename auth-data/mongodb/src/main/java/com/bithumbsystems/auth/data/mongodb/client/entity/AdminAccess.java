@@ -3,6 +3,7 @@ package com.bithumbsystems.auth.data.mongodb.client.entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -21,6 +22,7 @@ public class AdminAccess {
     private Boolean isUse;
     private String roleManagementId;
     private String siteId;
+    private LocalDateTime lastLoginDate;
     private LocalDateTime createDate;
     private String createAdminAccountId;
     private LocalDateTime updateDate;

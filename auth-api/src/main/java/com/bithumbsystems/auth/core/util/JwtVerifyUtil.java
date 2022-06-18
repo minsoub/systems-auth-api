@@ -3,6 +3,7 @@ package com.bithumbsystems.auth.core.util;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
+import com.bithumbsystems.auth.data.mongodb.client.entity.Client;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -35,9 +36,11 @@ public final class JwtVerifyUtil {
         var claims = getAllClaimsFromToken(token, secret);
         final Date expiration = claims.getExpiration();
 
+        log.debug("expiration check...");
         if (expiration.before(new Date()))
             throw new UnauthorizedException(ErrorCode.EXPIRED_TOKEN);
 
+        log.debug("return varificationResult");
         return new VerificationResult(claims, token);
     }
 
@@ -56,11 +59,18 @@ public final class JwtVerifyUtil {
         var signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
 
         log.debug("Jwts parseBuild...");
-        return Jwts.parserBuilder()
-                .setSigningKey(signingKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        Claims claims = null;
+        try {
+            claims = Jwts.parserBuilder()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        }catch(Exception ex) {
+            ex.printStackTrace();;
+        }
+
+        return claims;
     }
 }
 

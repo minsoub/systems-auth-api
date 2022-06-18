@@ -114,7 +114,9 @@ public class AccountService {
                         return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
 
                     //if (!passwordEncoder.encode(password).equals(account.getPassword()))
-                    if  (!password.equals(account.getPassword()))
+                    log.debug("password => {}", password);
+                    if (!passwordEncoder.matches(password, account.getPassword()))
+                    //if  (!password.equals(account.getPassword()))
                         return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
 
                     return generateTokenOne(account, TokenType.ACCESS)

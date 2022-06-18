@@ -12,7 +12,7 @@ public final class JwtGenerateUtil {
 
     public static TokenInfo generate(GenerateTokenInfo generateTokenInfo) {
         var expirationTimeInMilliseconds = Long.parseLong(generateTokenInfo.getExpiration()) * 1000;
-        var expirationDate = new Date(new Date().getTime() + expirationTimeInMilliseconds);
+        var expirationDate = new Date(System.currentTimeMillis() + expirationTimeInMilliseconds);
 
         var createdDate = new Date();
         var token = Jwts.builder()
