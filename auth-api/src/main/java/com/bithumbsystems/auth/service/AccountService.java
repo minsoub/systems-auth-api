@@ -23,10 +23,10 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import software.amazon.awssdk.utils.StringUtils;
 
 /**
  * 관리자/운영자 위한 인증 관련 클래스
@@ -150,7 +150,7 @@ public class AccountService {
                         .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
                         .subject(result.getSiteId())  // request.getClientId())
                         .issuer(account.getEmail())
-                        .claims(Map.of("ROLE", result.getRoleManagementId(), "account_id", account.getId()))  // 지금은 인증
+                        .claims(Map.of("ROLE", result.getRoles(), "account_id", account.getId()))  // 지금은 인증
                         .build();
 
                     var tokenInfo = generateOtp(generateTokenInfo)

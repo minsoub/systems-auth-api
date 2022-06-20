@@ -52,7 +52,7 @@ public class OtpService {
                     if (otpCheckCode(request.getOtpNo(), request.getEncodeKey())) {
                         // 2차 토큰 생성
                         log.debug("2차 토큰 생성");
-                        return generateToken(request, result.claims.getIssuer(), userType, result.claims.get("ROLE").toString(), result.claims.get("account_id").toString());
+                        return generateToken(request, result.claims.getIssuer(), userType, result.claims.get("ROLE"), result.claims.get("account_id").toString());
                     }else {
                         log.debug("OTP check errror");
                         return Mono.error(new UnauthorizedException(INVALID_OTP_NUMER));
@@ -68,7 +68,7 @@ public class OtpService {
      * @param userType
      * @return
      */
-    private Mono<TokenInfo> generateToken(OtpRequest request, String email, String userType, String role, String accountId) {
+    private Mono<TokenInfo> generateToken(OtpRequest request, String email, String userType, Object roles, String accountId) {
         log.debug("generateToken create......{}", request);
 
         log.debug("admin_access data => {}", request);
@@ -79,7 +79,7 @@ public class OtpService {
                 .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
                 .subject(request.getSiteId())  // request.getClientId())
                 .issuer(email)
-                .claims(Map.of("ROLE", role, "account_id", accountId)) // 운영자에 대한 Role이 필요.
+                .claims(Map.of("ROLE", roles, "account_id", accountId)) // 운영자에 대한 Role이 필요.
                 .build();
         var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
                 .toBuilder()

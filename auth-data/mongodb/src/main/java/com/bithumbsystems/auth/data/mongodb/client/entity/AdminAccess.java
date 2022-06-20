@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.data.mongodb.client.entity;
 
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +20,7 @@ public class AdminAccess {
     private String name;
     private String email;
     private Boolean isUse;
-    private String roleManagementId;
+    private Set<String> roles;
     private String siteId;
     private LocalDateTime createDate;
     private String createAdminAccountId;
