@@ -48,7 +48,12 @@ bithumbsystems:
         access: ${auth.api.jwt.expiration.access:28800}
         refresh: ${auth.api.jwt.expiration.refresh:28800}
 
-
+google:
+  recaptcha:
+    verify:
+      url: https://www.google.com/recaptcha/api/siteverify
+    secret:
+      lrc: 6Lef7JcfAAAAAKFN2Wta__cXutJ4wCMeCadxl3Eq
 ---
 spring:
   config:

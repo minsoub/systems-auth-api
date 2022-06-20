@@ -305,6 +305,7 @@ public class AuthTokenRouter {
             .POST("/api/v1/adm/login", authHandler::login)
             .POST("/api/v1/adm/otp", authHandler::otp)
             .POST("/api/v1/user/login", authHandler::userLogin)
+            .POST("/api/v1/user/captcha-login", authHandler::userCaptchaLogin)
             .POST("/api/v1/user/otp", authHandler::userOtp)
             .POST("/api/v1/user/join", authHandler::userJoin)
             .POST("/api/v1/authorize", authHandler::tokenValidate)

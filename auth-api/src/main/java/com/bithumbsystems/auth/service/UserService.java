@@ -1,10 +1,7 @@
 package com.bithumbsystems.auth.service;
 
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
@@ -17,6 +14,7 @@ import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
+import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
@@ -45,13 +43,41 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final CaptchaService captchaService;
+
     /**
      * 일반 사용자 로그인 처리 - 1차 로그인
      * @param userRequest
      * @return
      */
     public Mono<TokenOtpInfo> userLogin(Mono<UserRequest> userRequest) {
-        return userRequest.flatMap(request -> authenticateUser(request.getEmail(), request.getPasswd(), request.getSiteId()));
+        return userRequest.flatMap(request -> authenticateUser(
+                AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
+                , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
+                , request.getSiteId()
+                )
+        );
+    }
+
+    /**
+     * 일반 사용자 로그인 처리 - 1차 로그인 with captcha
+     * @param userCaptchaRequest
+     * @return
+     */
+    public Mono<TokenOtpInfo> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
+        return userCaptchaRequest.flatMap(request -> {
+            return captchaService.doVerify(request.getCaptcha())
+                    .flatMap(result -> {
+                        if (result) {
+                            return authenticateUser(
+                                    AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
+                                    , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
+                                    , request.getSiteId()
+                            ).switchIfEmpty(Mono.error(new UnauthorizedException(AUTHENTICATION_FAIL)));
+                        }
+                        return Mono.error(new UnauthorizedException(CAPTCHA_FAIL));
+                    });
+        });
     }
 
     /**
@@ -143,6 +169,7 @@ public class UserService {
                     return generateTokenOne(account, TokenType.ACCESS, clientId)
                             .map(result -> {
                                 log.debug("generateToken => {}", result);
+                                result.setId(account.getId());
                                 result.setEmail(email);  // account.getEmail());
                                 result.setOtpInfo(otpService.generate(email, account.getOtpSecretKey()));  // account.getEmail(), account.getOtp_secret_key()));
 
@@ -178,8 +205,9 @@ public class UserService {
                         .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
                         .subject(clientId)  // request.getClientId())
                         .issuer(account.getEmail())
-                        .claims(Map.of("ROLE", "OTP"))  // 지금은 인증
-                        .build();
+                            .claims(Map.of("ROLE", "USER", "account_id", account.getId()))  // 지금은 인증
+
+                            .build();
 
                     var tokenInfo = generateOtp(generateTokenInfo)
                         .toBuilder()

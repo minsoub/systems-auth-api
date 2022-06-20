@@ -2,11 +2,7 @@ package com.bithumbsystems.auth.api.handler;
 
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
-import com.bithumbsystems.auth.core.model.request.ClientRegisterRequest;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
-import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
@@ -120,6 +116,17 @@ public class AuthHandler {
         return ServerResponse.ok().body(userService.userLogin(userRequest), TokenInfo.class);
     }
 
+    /**
+     * 일반 사용자 로그인 인증 처리 with captcha
+     *
+     * @param request the request
+     * @return mono
+     */
+    public Mono<ServerResponse> userCaptchaLogin(ServerRequest request) {
+        Mono<UserCaptchaRequest> userCaptchaRequest = request.bodyToMono(UserCaptchaRequest.class);
+
+        return ServerResponse.ok().body(userService.userCaptchaLogin(userCaptchaRequest), TokenInfo.class);
+    }
 
     /**
      * QR 바코드를 생성해서 리턴한다. (사용자)
