@@ -27,18 +27,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+/**
+ * The type Otp service.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class OtpService {
     private final JwtProperties jwtProperties;
     private final RedisTemplateSample redisTemplateSample;
+
     /**
-     * OTP 처리 - 2차
-     * 처리완료 후 토큰정보를 리턴한다.
+     * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
      *
-     * @param request
-     * @return
+     * @param request  the request
+     * @param userType the user type
+     * @return mono mono
      */
     public Mono<TokenInfo> otpValidation(OtpRequest request, String userType) {
         // Token Validation check and otp no check
@@ -94,10 +98,11 @@ public class OtpService {
     /**
      * QR 코드를 생성해서 리턴한다. (최초 생성)
      *
-     * @param email
-     * @return
+     * @param email        the email
+     * @param optSecretKey the opt secret key
+     * @return otp response
      */
-    //public Mono<OtpResponse> generate(String email) {
+//public Mono<OtpResponse> generate(String email) {
     public OtpResponse generate(String email, String optSecretKey) {
         byte[] buffer = new byte[5 + 5 * 5];
         new Random().nextBytes(buffer);
@@ -129,7 +134,7 @@ public class OtpService {
             byte[] decodeKey = codec.decode(optKey);
             int window = 3;
             for (int i= -window; i<= window; ++i) {
-                long hash = verify_code(decodeKey, wave + i);
+                long hash = verifyCode(decodeKey, wave + i);
                 if (hash == optnum) result = true;
             }
         }catch(InvalidKeyException | NoSuchAlgorithmException e) {
@@ -139,7 +144,7 @@ public class OtpService {
         return result;
     }
 
-    private int verify_code(byte[] key, long t) throws NoSuchAlgorithmException, InvalidKeyException {
+    private int verifyCode(byte[] key, long t) throws NoSuchAlgorithmException, InvalidKeyException {
         byte[] data = new byte[8];
         long value = t;
         for (int i=8; i-- > 0; value >>>= 8) {

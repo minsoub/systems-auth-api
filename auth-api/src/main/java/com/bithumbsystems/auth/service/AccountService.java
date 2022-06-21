@@ -19,6 +19,7 @@ import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccessDomainService;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import com.bithumbsystems.auth.data.mongodb.client.service.ClientDomainService;
+import com.bithumbsystems.auth.data.mongodb.client.service.RoleManagementDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -27,6 +28,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import software.amazon.awssdk.utils.StringUtils;
 
 /**
@@ -40,6 +42,7 @@ public class AccountService {
     private final AdminAccountDomainService adminAccountDomainService;
     private final AdminAccessDomainService adminAccessDomainService;
 
+    private final RoleManagementDomainService roleManagementDomainService;
 
     private final OtpService otpService;
 
@@ -57,7 +60,7 @@ public class AccountService {
    * 사용자 1차 로그인
    *
    * @param userRequest the user request
-   * @return mono
+   * @return mono mono
    */
   public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
         return userRequest.flatMap(request -> authenticate(
@@ -71,7 +74,7 @@ public class AccountService {
    * 사용자 2차 로그인 (otp 로그인)
    *
    * @param otpRequest the otp request
-   * @return mono
+   * @return mono mono
    */
   public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
         return otpRequest.flatMap(request -> otpService.otpValidation(request, "ADM"));
@@ -103,11 +106,10 @@ public class AccountService {
    *
    * @param email    the email
    * @param password the password
-   * @return mono
+   * @return mono mono
    */
   public Mono<TokenOtpInfo> authenticate(String email, String password) {
         return findByEmail(email)
-            .log()
                 .flatMap(account -> {
                     log.debug("result account data => {}", account);
                     if (account.getStatus().equals("9"))
@@ -143,29 +145,32 @@ public class AccountService {
    *
    * @param account   the account
    * @param tokenType the token type
-   * @return mono
+   * @return mono mono
    */
   public Mono<TokenOtpInfo> generateTokenOne(AdminAccount account, TokenType tokenType) {
 
-        log.debug("generateTokenOne create......{}", account.getId());
+        log.debug("generateTokenOne create......{} {}", account.getId(), tokenType);
         return adminAccessDomainService.findByAdminId(account.getId())
-                .map(result -> {
+                .flatMap(result -> {
                     log.debug("admin_access data => {}", result);
+                  return roleManagementDomainService.findFirstRole(result.getRoles()).flatMap(roleManagement -> {
                     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
                         .builder()
                         .secret(jwtProperties.getSecret())
                         .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                        .subject(result.getSiteId())  // request.getClientId())
+                        .subject(roleManagement.getSiteId())  // request.getClientId())
                         .issuer(account.getEmail())
                         .claims(Map.of("ROLE", result.getRoles(), "account_id", account.getId()))  // 지금은 인증
                         .build();
 
-                    var tokenInfo = generateOtp(generateTokenInfo)
+                    return Mono.just(generateOtp(generateTokenInfo)
                         .toBuilder()
-                        .siteId(result.getSiteId())
-                        .build();
-                    redisTemplateSample.saveToken(account.getEmail()+"::OTP", tokenInfo.toString()).log("result ->save success..").subscribe();
-                    return tokenInfo;
+                        .siteId(roleManagement.getSiteId())
+                        .build());
+                  }).publishOn(Schedulers.boundedElastic()).doOnNext(tokenOtpInfo ->
+                      redisTemplateSample.saveToken(account.getEmail()+"::OTP", tokenOtpInfo.toString())
+                      .log("result ->save success..")
+                      .subscribe()).flatMap(Mono::just);
                 })
                 .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
     }

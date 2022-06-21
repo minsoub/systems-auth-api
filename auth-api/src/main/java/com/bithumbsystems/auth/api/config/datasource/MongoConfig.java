@@ -27,6 +27,7 @@ import org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy;
 import org.springframework.data.mongodb.ReactiveMongoDatabaseFactory;
 import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractReactiveMongoConfiguration;
+import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.convert.NoOpDbRefResolver;
@@ -126,13 +127,13 @@ public class MongoConfig extends AbstractReactiveMongoConfiguration {
     @Bean
     @Primary
     public MappingMongoConverter mappingMongoConverter(ReactiveMongoDatabaseFactory databaseFactory,
-                                                       MongoCustomConversions customConversions, MongoMappingContext mappingContext) {
+        MongoCustomConversions customConversions, MongoMappingContext mappingContext) {
         mappingContext.setFieldNamingStrategy(new SnakeCaseFieldNamingStrategy());
-
+        mappingContext.setAutoIndexCreation(true);
         MappingMongoConverter converter = new MappingMongoConverter(NoOpDbRefResolver.INSTANCE, mappingContext);
         converter.setCustomConversions(customConversions);
         converter.setCodecRegistryProvider(databaseFactory);
-
+        converter.setTypeMapper(new DefaultMongoTypeMapper(null));
         return converter;
     }
 }
