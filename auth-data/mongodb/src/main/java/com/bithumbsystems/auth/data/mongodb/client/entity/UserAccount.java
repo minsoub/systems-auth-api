@@ -1,10 +1,13 @@
 package com.bithumbsystems.auth.data.mongodb.client.entity;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Document(collection = "lrc_user_account")
 //@AllArgsConstructor
@@ -13,7 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class UserAccount {
-    @Id
+    @MongoId(value = FieldType.STRING, targetType = FieldType.STRING)
     private String id;
     private String email;
     private String password;
