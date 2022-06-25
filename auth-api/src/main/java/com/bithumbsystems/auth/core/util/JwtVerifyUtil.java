@@ -37,8 +37,11 @@ public final class JwtVerifyUtil {
         final Date expiration = claims.getExpiration();
 
         log.debug("expiration check...");
-        if (expiration.before(new Date()))
+        if (expiration.before(new Date())) {
+            log.debug("Token validation check error : EXPIRED_TOKEN");
+            log.debug("Token get date : {}", expiration);
             throw new UnauthorizedException(ErrorCode.EXPIRED_TOKEN);
+        }
 
         log.debug("return varificationResult");
         return new VerificationResult(claims, token);

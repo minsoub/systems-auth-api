@@ -83,7 +83,7 @@ public class OtpService {
                 .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
                 .subject(request.getSiteId())  // request.getClientId())
                 .issuer(email)
-                .claims(Map.of("ROLE", roles, "account_id", accountId)) // 운영자에 대한 Role이 필요.
+                .claims(Map.of("ROLE", roles, "account_id", accountId, "user_id", email)) // 운영자에 대한 Role이 필요.
                 .build();
         var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
                 .toBuilder()
