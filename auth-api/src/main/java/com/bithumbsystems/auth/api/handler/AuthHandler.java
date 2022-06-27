@@ -10,6 +10,7 @@ import com.bithumbsystems.auth.service.AccountService;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.OtpService;
 import com.bithumbsystems.auth.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -101,6 +102,17 @@ public class AuthHandler {
 
         return ServerResponse.ok().body(accountService.otp(otpRequest), TokenInfo.class);  // BodyInserters.fromValue(otpRequest));
 
+    }
+
+    /**
+     * OTP Key 정보를 Clear 한다.
+     * @param request
+     * @return
+     */
+    public Mono<ServerResponse> otpClear(ServerRequest request) {
+        Mono<OtpClearRequest> otpClearRequestMono = request.bodyToMono(OtpClearRequest.class);
+
+        return ServerResponse.ok().body(accountService.otpClear(otpClearRequestMono), TokenInfo.class);
     }
 
 

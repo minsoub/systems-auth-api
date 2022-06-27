@@ -12,6 +12,7 @@ import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
+import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.util.AES256Util;
@@ -78,7 +79,28 @@ public class AccountService {
    */
   public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
         return otpRequest.flatMap(request -> otpService.otpValidation(request, "ADM"));
-    }
+  }
+
+    /**
+     * 사용자 OTP 정보를 클리어 한다.
+     * @param otpClearRequestMono
+     * @return
+     */
+  public Mono<AdminAccount> otpClear(Mono<OtpClearRequest> otpClearRequestMono) {
+      return otpClearRequestMono.flatMap(request -> {
+          return adminAccountDomainService.findByEmail(request.getEmail())
+                  .flatMap(result -> {
+                      result.setOtpSecretKey("");
+                      return adminAccountDomainService.save(result)
+                              .flatMap(adminAccount -> {
+                                  adminAccount.setPassword("");
+                                  adminAccount.setId("");
+                                  return Mono.just(adminAccount);
+                              });
+                  });
+      });
+  }
+
 
   /**
    * Find by email mono.
@@ -126,6 +148,7 @@ public class AccountService {
                                 log.debug("generateToken => {}", result);
                                 result.setEmail(account.getEmail());
                                 result.setOtpInfo(otpService.generate(account.getEmail(), account.getOtpSecretKey()));
+                                result.setOptKey(account.getOtpSecretKey());
 
                                 if (StringUtils.isEmpty(account.getOtpSecretKey())) {
                                     // otp_secret_key 등록.

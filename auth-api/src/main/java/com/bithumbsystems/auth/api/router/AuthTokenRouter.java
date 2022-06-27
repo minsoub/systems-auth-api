@@ -3,10 +3,7 @@ package com.bithumbsystems.auth.api.router;
 import com.bithumbsystems.auth.api.handler.AuthHandler;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
-import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.ClientRegisterResponse;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
@@ -192,6 +189,32 @@ public class AuthTokenRouter {
                     )
         ),
             @RouterOperation(
+                    path = "/api/v1/adm/otp/clear",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "otpClear",
+                    operation = @Operation(
+                            operationId = "otpClear",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = TokenInfo.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = OtpClearRequest.class
+                                    ))
+                            )
+                    )
+            ),
+            @RouterOperation(
                     path = "/api/v1/user/login",
                     produces = {
                             MediaType.APPLICATION_JSON_VALUE
@@ -304,6 +327,7 @@ public class AuthTokenRouter {
             .DELETE("/api/v1/token", authHandler::deleteToken)
             .POST("/api/v1/adm/login", authHandler::login)
             .POST("/api/v1/adm/otp", authHandler::otp)
+            .POST("/api/v1/adm/otp/clear", authHandler::otpClear)
             .POST("/api/v1/user/login", authHandler::userLogin)
             .POST("/api/v1/user/captcha-login", authHandler::userCaptchaLogin)
             .POST("/api/v1/user/otp", authHandler::userOtp)

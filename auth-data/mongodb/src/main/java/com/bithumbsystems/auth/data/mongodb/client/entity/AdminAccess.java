@@ -7,13 +7,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Document(collection = "admin_access")
 @AllArgsConstructor
 @Getter
 @Setter
 public class AdminAccess {
-    @Id
+    @MongoId(value = FieldType.STRING, targetType = FieldType.STRING)
     private String id;
     private String adminAccountId;
     private String name;
