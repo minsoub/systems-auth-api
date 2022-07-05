@@ -26,8 +26,15 @@ public class UserAccount {
     private String snsId;
     private String status;
     private String otpSecretKey;
+    private Integer loginFailCount;
+    private LocalDateTime loginFailDate;
     private LocalDateTime createDate;
     private String createAccountId;
     private LocalDateTime updateDate;
     private String updateAccountId;
+
+    public void setLoginFail(Integer loginFailCount){
+        this.loginFailCount = (loginFailCount == null)? 1 : loginFailCount;
+        this.loginFailDate = LocalDateTime.now();
+    }
 }

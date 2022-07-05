@@ -1,9 +1,6 @@
 package com.bithumbsystems.auth.service;
 
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
-import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
-
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.ErrorData;
@@ -22,14 +19,19 @@ import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
-import java.time.LocalDateTime;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
+import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 @Service
 @Log4j2
@@ -134,6 +136,7 @@ public class UserService {
                     .phone(phone)  // config.encrypt(req.getPhone()))
                     .snsId(req.getSnsId())
                     .status("NORMAL")
+                    .loginFailCount(0)
                     .createDate(LocalDateTime.now())
                     .createAccountId("admin")
                     .build();
@@ -163,7 +166,27 @@ public class UserService {
                         return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
 
                     if (!passwordEncoder.matches(password, account.getPassword())) {
-                        return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                        // 로그인 실패 횟수 누적
+                        Integer failCount = account.getLoginFailCount() == null? 1 : account.getLoginFailCount() + 1;
+
+                        // 5회이상 실패시 5분 후 다시 시도가능
+                        if (account.getLoginFailCount() != null && account.getLoginFailCount() >= 5){
+                            Duration between = Duration.between(account.getLoginFailDate(), LocalDateTime.now());
+                            long sec = between.getSeconds();
+                            log.debug("time duration:{}, {}, {}", sec, account.getLoginFailDate().toString(), LocalDateTime.now().toString());
+                            if(sec <= 300) {
+                                // 5분이 아직 지나지 않았으면 실패 메시지 출력
+                                return Mono.error(new UnauthorizedException(MAXIMUM_AUTH_ATTEMPTS_EXCEEDED));
+                            }else{
+                                // 5분이 지났으면 실패횟수를 1로 초기화
+                                failCount = 1;
+                            }
+                        }
+                        // 로그인 실패 횟수를 저장하고 에러 리턴
+                        account.setLoginFail(failCount);
+                        return userAccountDomainService.save(account).flatMap(userAccount -> {
+                            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                        });
                     }
 
                     return generateTokenOne(account, TokenType.ACCESS, clientId)
@@ -177,9 +200,10 @@ public class UserService {
                                     // otp_secret_key 등록.
                                     log.debug("otp secret key is null => save data");
                                     account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
-                                    account.setLastLoginDate(LocalDateTime.now());
-                                    userAccountDomainService.save(account).then().log("result completed...").subscribe();
                                 }
+                                account.setLastLoginDate(LocalDateTime.now());
+                                account.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
+                                userAccountDomainService.save(account).then().log("result completed...").subscribe();
                                 return result;
                             });
                 })
