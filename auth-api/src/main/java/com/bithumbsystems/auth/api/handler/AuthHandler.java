@@ -105,6 +105,20 @@ public class AuthHandler {
     }
 
     /**
+     * 사용자 패스워드 업데이트 및 상태 업데이트
+     *
+     * @param request the request
+     * @return mono
+     */
+    public Mono<ServerResponse> passupdate(ServerRequest request) {
+        log.debug("login called..");
+        Mono<UserRequest> userRequest = request.bodyToMono(UserRequest.class);
+
+        return ServerResponse.ok().body(accountService.passUpdate(userRequest), TokenOtpInfo.class);
+
+        //return ServerResponse.ok().body(accountService.login(authRequest), TokenInfo.class);
+    }
+    /**
      * OTP Key 정보를 Clear 한다.
      * @param request
      * @return

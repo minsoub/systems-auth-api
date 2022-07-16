@@ -70,7 +70,8 @@ public final class JwtVerifyUtil {
                     .parseClaimsJws(token)
                     .getBody();
         }catch(Exception ex) {
-            ex.printStackTrace();;
+            //ex.printStackTrace();
+            throw new UnauthorizedException(ErrorCode.EXPIRED_TOKEN);
         }
 
         return claims;

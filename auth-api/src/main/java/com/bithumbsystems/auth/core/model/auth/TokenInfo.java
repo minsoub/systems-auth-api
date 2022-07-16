@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.core.model.auth;
 
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +17,5 @@ public class TokenInfo {
     private String refreshToken;
     private Date issuedAt;
     private Date expiresAt;
+    private Status status;
 }

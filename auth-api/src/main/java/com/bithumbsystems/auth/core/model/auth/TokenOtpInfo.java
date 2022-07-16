@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.core.model.auth;
 
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,4 +22,5 @@ public class TokenOtpInfo {
     private OtpResponse otpInfo;
     private String id;
     private String optKey;
+    private Status status;
 }

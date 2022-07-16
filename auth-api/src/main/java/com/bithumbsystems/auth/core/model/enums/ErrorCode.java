@@ -13,6 +13,8 @@ public enum ErrorCode {
 
   USER_ACCOUNT_DISABLE("Account disabled"),
   INVALID_USER_PASSWORD("Invalid user password!"),
+
+  INVALID_ACCOUNT_CLOSED("Account is closed!!"),
   INVALID_USERNAME("Invalid user name"),
 
   INVALID_USER("Not ADMIN"),

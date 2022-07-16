@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.core.model.request;
 
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,4 +13,5 @@ public class OtpRequest {
     String encodeKey;
     String siteId;
     String token;
+    Status status;
 }

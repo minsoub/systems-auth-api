@@ -1,9 +1,6 @@
 package com.bithumbsystems.auth.service;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
@@ -11,6 +8,9 @@ import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
+import com.bithumbsystems.auth.core.model.enums.ResultCode;
+import com.bithumbsystems.auth.core.model.response.SingleResponse;
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
@@ -71,6 +71,22 @@ public class AccountService {
         );
     }
 
+    /**
+     * 패스워드 변경
+     *
+     * @param userRequest
+     * @return
+     */
+    public Mono<SingleResponse> passUpdate(Mono<UserRequest> userRequest) {
+        return userRequest.flatMap(request -> passwordUpdate(
+                        AES256Util.decryptAES( AES256Util.CLIENT_AES_KEY_ADM, request.getEmail() )
+                        , AES256Util.decryptAES( AES256Util.CLIENT_AES_KEY_ADM, request.getPasswd() )
+                ).map(result -> {
+                    return new SingleResponse<String>("OK", ResultCode.SUCCESS);
+                })
+        );
+    }
+
   /**
    * 사용자 2차 로그인 (otp 로그인)
    *
@@ -123,6 +139,25 @@ public class AccountService {
 //
 //    }
 
+    /**
+     * 패스워드 정보를 수정한다. (임시 비밀번호 발급 후 패스워드 수정)
+     * @param email
+     * @param password
+     * @return
+     */
+    public Mono<AdminAccount> passwordUpdate(String email, String password) {
+        log.debug("email => {}, password => {}", email, password);
+      return findByEmail(email)
+              .flatMap(account -> {
+                  account.setOldPassword(account.getPassword());
+                  account.setPassword(passwordEncoder.encode(password));
+                  account.setStatus(Status.NORMAL);
+                  account.setLastPasswordUpdateDate(LocalDateTime.now());
+                  account.setUpdateDate(LocalDateTime.now());
+                  account.setUpdateAdminAccountId(account.getId());
+                  return adminAccountDomainService.save(account);
+              });
+    }
   /**
    * 사용자 인증 처리 - 1차
    *
@@ -134,14 +169,26 @@ public class AccountService {
         return findByEmail(email)
                 .flatMap(account -> {
                     log.debug("result account data => {}", account);
-                    if (account.getStatus().equals("9"))
+                    if (account.getStatus().equals(Status.DENY_ACCESS))
                         return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
 
                     //if (!passwordEncoder.encode(password).equals(account.getPassword()))
                     log.debug("password => {}", password);
-                    if (!passwordEncoder.matches(password, account.getPassword()))
-                    //if  (!password.equals(account.getPassword()))
-                        return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                    if (!passwordEncoder.matches(password, account.getPassword())) {
+                        account.setLoginFailCount(account.getLoginFailCount() == null ? 1: account.getLoginFailCount()+1);
+                        if (account.getLoginFailCount() == 5) {
+                            account.setStatus(Status.CLOSED_ACCOUNT);
+                        }
+
+                        return adminAccountDomainService.save(account)
+                                .flatMap(result -> {
+                                    if (account.getLoginFailCount() >= 5) {
+                                        return Mono.error(new UnauthorizedException(INVALID_ACCOUNT_CLOSED));
+                                    }else {
+                                        return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                                    }
+                                });
+                    }
 
                     return generateTokenOne(account, TokenType.ACCESS)
                             .map(result -> {
@@ -149,6 +196,7 @@ public class AccountService {
                                 result.setEmail(account.getEmail());
                                 result.setOtpInfo(otpService.generate(account.getEmail(), account.getOtpSecretKey()));
                                 result.setOptKey(account.getOtpSecretKey());
+                                result.setStatus(account.getStatus());
 
                                 if (StringUtils.isEmpty(account.getOtpSecretKey())) {
                                     // otp_secret_key 등록.

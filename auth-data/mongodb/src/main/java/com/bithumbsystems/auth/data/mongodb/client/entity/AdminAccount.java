@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.data.mongodb.client.entity;
 
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -24,8 +25,9 @@ public class AdminAccount {
     private String password;
     private String oldPassword;
     private String otpSecretKey;
-    private String status;
+    private Status status;
     private Boolean isUse;
+    private Long loginFailCount;
     private LocalDateTime lastLoginDate;
     private LocalDateTime lastPasswordUpdateDate;
     private LocalDateTime createDate;

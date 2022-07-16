@@ -1,8 +1,10 @@
 package com.bithumbsystems.auth.service;
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
 import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generate;
 
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
+import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.TokenType;

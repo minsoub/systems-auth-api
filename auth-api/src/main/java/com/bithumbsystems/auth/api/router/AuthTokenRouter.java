@@ -189,6 +189,32 @@ public class AuthTokenRouter {
                     )
         ),
             @RouterOperation(
+                    path = "/api/v1/adm/passupdate",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AuthHandler.class,
+                    beanMethod = "passupdate",
+                    operation = @Operation(
+                            operationId = "passupdate",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = SingleResponse.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = UserRequest.class
+                                    ))
+                            )
+                    )
+            ),
+            @RouterOperation(
                     path = "/api/v1/adm/otp/clear",
                     produces = {
                             MediaType.APPLICATION_JSON_VALUE
@@ -327,6 +353,7 @@ public class AuthTokenRouter {
             .DELETE("/api/v1/token", authHandler::deleteToken)
             .POST("/api/v1/adm/login", authHandler::login)
             .POST("/api/v1/adm/otp", authHandler::otp)
+            .POST("/api/v1/adm/passupdate", authHandler::passupdate)
             .POST("/api/v1/adm/otp/clear", authHandler::otpClear)
             .POST("/api/v1/user/login", authHandler::userLogin)
             .POST("/api/v1/user/captcha-login", authHandler::userCaptchaLogin)

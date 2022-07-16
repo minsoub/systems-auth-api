@@ -88,6 +88,8 @@ public class OtpService {
         var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
                 .toBuilder()
                 .build();
+        tokenInfo.setStatus(request.getStatus());
+        log.debug("token info => {}", tokenInfo);
         return redisTemplateSample.saveToken(email, tokenInfo.toString())  // .getAccessToken())
                 .map(result -> {
                     redisTemplateSample.deleteToken(email+"::OTP").log("delete otp token").subscribe();
