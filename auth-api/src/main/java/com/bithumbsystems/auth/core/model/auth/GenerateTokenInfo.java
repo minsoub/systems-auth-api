@@ -11,6 +11,7 @@ import lombok.Getter;
 public class GenerateTokenInfo {
 
   private final String expiration;
+  private final String refreshExpiration;
   private final Map<String, Object> claims;
   private final String issuer;
   private final String subject;

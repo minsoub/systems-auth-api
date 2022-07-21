@@ -81,6 +81,7 @@ public class OtpService {
                 .builder()
                 .secret(jwtProperties.getSecret())
                 .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
+                .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
                 .subject(request.getSiteId())  // request.getClientId())
                 .issuer(email)
                 .claims(Map.of("ROLE", roles, "account_id", accountId, "user_id", email)) // 운영자에 대한 Role이 필요.
