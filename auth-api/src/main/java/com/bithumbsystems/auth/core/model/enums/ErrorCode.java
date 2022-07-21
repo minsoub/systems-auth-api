@@ -27,7 +27,8 @@ public enum ErrorCode {
 
   AUTHENTICATION_FAIL("Fail Authentication"),
 
-  MAXIMUM_AUTH_ATTEMPTS_EXCEEDED("maximum authentication attempts exceeded");
+  MAXIMUM_AUTH_ATTEMPTS_EXCEEDED("maximum authentication attempts exceeded"),
+  MAXIMUM_AUTHENTICATION_FAIL("Maximum authentication fail.");
 
   private final String message;
 }
