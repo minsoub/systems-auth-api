@@ -12,9 +12,10 @@ public class JwtGenerateUtil {
 
     public static TokenInfo generate(GenerateTokenInfo generateTokenInfo) {
         Date expirationDate = getExpirationDate(generateTokenInfo);
+        Date refreshExpirationDate = getRefreshExpirationDate(generateTokenInfo);
 
         var createdDate = new Date();
-        var token = makeToken(generateTokenInfo, expirationDate, createdDate);
+        var token = makeToken(generateTokenInfo, expirationDate, createdDate); // access token
 
         // refreshToken
         var refreshToken = Jwts.builder()
@@ -23,7 +24,7 @@ public class JwtGenerateUtil {
                 .setSubject(generateTokenInfo.getSubject())
                 .setIssuedAt(createdDate)
                 .setId(UUID.randomUUID().toString())
-                .setExpiration(expirationDate)
+                .setExpiration(refreshExpirationDate)
                 .signWith(Keys.hmacShaKeyFor(generateTokenInfo.getSecret().getBytes()))
                 .compact();
 
@@ -63,6 +64,11 @@ public class JwtGenerateUtil {
 
     private static Date getExpirationDate(GenerateTokenInfo generateTokenInfo) {
         var expirationTimeInMilliseconds = Long.parseLong(generateTokenInfo.getExpiration()) * 1000;
+        return new Date(System.currentTimeMillis() + expirationTimeInMilliseconds);
+    }
+
+    private static Date getRefreshExpirationDate(GenerateTokenInfo generateTokenInfo) {
+        var expirationTimeInMilliseconds = Long.parseLong(generateTokenInfo.getRefreshExpiration()) * 1000;
         return new Date(System.currentTimeMillis() + expirationTimeInMilliseconds);
     }
 }
