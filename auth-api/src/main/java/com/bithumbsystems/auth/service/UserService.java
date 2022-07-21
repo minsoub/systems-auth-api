@@ -162,7 +162,9 @@ public class UserService {
         return userAccountDomainService.findByEmail(AES256Util.encryptAES(config.getKmsKey(), email, true))
                 .flatMap(account -> {
                     log.debug("result account data => {}", account);
-                    if (account.getStatus().equals("9"))
+                    if (account.getStatus().equals("EMAIL_VALID")) {
+                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_EMAIL_VALID));
+                    }else if (account.getStatus().equals("NORMAL") == false)
                         return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
                     Integer failCount = account.getLoginFailCount() == null? 0 : account.getLoginFailCount();
                     if (!passwordEncoder.matches(password, account.getPassword())) {
