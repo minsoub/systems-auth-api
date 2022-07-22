@@ -7,6 +7,7 @@ import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.service.admin.AccountService;
+import com.bithumbsystems.auth.service.admin.TokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ import reactor.core.publisher.Mono;
 public class AdminAuthHandler {
   private final AccountService accountService;
 
+  private final TokenService tokenService;
 
   /**
    * Refresh token mono.
@@ -29,18 +31,7 @@ public class AdminAuthHandler {
    */
   public Mono<ServerResponse> refreshToken(ServerRequest request) {
     Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
-    return ServerResponse.ok().body(null, TokenInfo.class);
-  }
-
-  /**
-   * Delete token mono.
-   *
-   * @param request the request
-   * @return the mono
-   */
-  public Mono<ServerResponse> deleteToken(ServerRequest request) {
-    Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
-    return ServerResponse.ok().body(null, TokenInfo.class);
+    return ServerResponse.ok().body(tokenService.reGenerateToken(authRequest), TokenInfo.class);
   }
 
   /**

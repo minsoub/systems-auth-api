@@ -10,14 +10,13 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTHENT
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTH_ATTEMPTS_EXCEEDED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_EMAIL_VALID;
-import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
-import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
+import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
@@ -25,17 +24,16 @@ import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
+import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
-import com.bithumbsystems.auth.service.admin.OtpService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -49,7 +47,6 @@ import reactor.core.scheduler.Schedulers;
 @RequiredArgsConstructor
 public class UserService {
 
-  private final OtpService otpService;
   private final JwtProperties jwtProperties;
   private final UserAccountDomainService userAccountDomainService;
   private final RedisTemplateSample redisTemplateSample;
@@ -63,9 +60,9 @@ public class UserService {
    * 일반 사용자 로그인 처리 - 1차 로그인
    *
    * @param userRequest the user request
-   * @return mono
+   * @return mono mono
    */
-  public Mono<TokenOtpInfo> userLogin(Mono<UserRequest> userRequest) {
+  public Mono<TokenInfo> userLogin(Mono<UserRequest> userRequest) {
     return userRequest.flatMap(request -> authenticateUser(
             AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
             , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
@@ -78,9 +75,9 @@ public class UserService {
    * 일반 사용자 로그인 처리 - 1차 로그인 with captcha
    *
    * @param userCaptchaRequest the user captcha request
-   * @return mono
+   * @return mono mono
    */
-  public Mono<TokenOtpInfo> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
+  public Mono<TokenInfo> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
     return userCaptchaRequest.flatMap(request -> {
       return captchaService.doVerify(request.getCaptcha())
           .flatMap(result -> {
@@ -100,7 +97,7 @@ public class UserService {
    * 사용자 가입을 처리한다.
    *
    * @param joinRequest the join request
-   * @return mono
+   * @return mono mono
    */
   public Mono<SingleResponse> join(Mono<UserJoinRequest> joinRequest) {
     log.debug("join called...");
@@ -156,10 +153,10 @@ public class UserService {
    *
    * @param email
    * @param password
-   * @param clientId
+   * @param siteId
    * @return
    */
-  private Mono<TokenOtpInfo> authenticateUser(String email, String password, String clientId) {
+  private Mono<TokenInfo> authenticateUser(String email, String password, String siteId) {
     return userAccountDomainService.findByEmail(
             AES256Util.encryptAES(config.getKmsKey(), email, true))
         .flatMap(account -> {
@@ -201,19 +198,10 @@ public class UserService {
             return Mono.error(new UnauthorizedException(MAXIMUM_AUTH_ATTEMPTS_EXCEEDED));
           }
 
-          return generateTokenOne(account, clientId)
+          return generateToken(account, siteId)
               .map(result -> {
                 log.debug("generateToken => {}", result);
-                result.setId(account.getId());
-                result.setEmail(email);
-                result.setOtpInfo(otpService.generate(email,
-                    account.getOtpSecretKey()));
 
-                if (StringUtils.isEmpty(account.getOtpSecretKey())) {
-                  // otp_secret_key 등록.
-                  log.debug("otp secret key is null => save data");
-                  account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
-                }
                 account.setLastLoginDate(LocalDateTime.now());
                 account.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
                 account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
@@ -240,10 +228,10 @@ public class UserService {
    * 1차 토큰 생성
    *
    * @param account
-   * @param clientId
+   * @param siteId
    * @return
    */
-  private Mono<TokenOtpInfo> generateTokenOne(UserAccount account, String clientId) {
+  private Mono<TokenInfo> generateToken(UserAccount account, String siteId) {
 
     log.debug("generateTokenOne create......{}", account.getId());
     return userAccountDomainService.findById(account.getId())
@@ -254,16 +242,16 @@ public class UserService {
               .builder()
               .secret(jwtProperties.getSecret())
               .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-              .subject(clientId)  // request.getClientId())
+              .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
+              .subject(siteId)
               .issuer(account.getEmail())
               .claims(Map.of("ROLE", "USER", "account_id", account.getId()))  // 지금은 인증
               .build();
 
-          var tokenInfo = generateOtp(generateTokenInfo)
+          var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
               .toBuilder()
-              .siteId(clientId)
               .build();
-          redisTemplateSample.saveToken(account.getEmail() + "::OTP", tokenInfo.toString())
+          redisTemplateSample.saveToken(account.getEmail() + "::LRC", tokenInfo.toString())
               .log("result -> save success..").subscribe();
           return tokenInfo;
         })

@@ -4,19 +4,15 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUM
 
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
-import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
-import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
+import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
-import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
-import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
 import java.util.Random;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -26,7 +22,6 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * The type Otp service.
@@ -37,7 +32,7 @@ import reactor.core.scheduler.Schedulers;
 public class OtpService {
 
   private final JwtProperties jwtProperties;
-  private final RedisTemplateSample redisTemplateSample;
+  private final TokenService tokenService;
 
   /**
    * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
@@ -57,8 +52,14 @@ public class OtpService {
           if (otpCheckCode(request.getOtpNo(), request.getEncodeKey())) {
             // 2차 토큰 생성
             log.debug("2차 토큰 생성");
-            return generateToken(request, result.claims.getIssuer(), result.claims.get("ROLE"),
-                result.claims.get("account_id").toString());
+
+            return tokenService.generateToken(TokenGenerateRequest.builder()
+                .accountId(result.claims.get("account_id").toString())
+                .roles(result.claims.get("ROLE"))
+                .siteId(request.getSiteId())
+                .status(request.getStatus())
+                .email(result.claims.getIssuer())
+                .build());
           } else {
             log.debug("OTP check error");
             return Mono.error(new UnauthorizedException(INVALID_OTP_NUMER));
@@ -66,42 +67,6 @@ public class OtpService {
         });
   }
 
-  /**
-   * 2차 인증에 대한 토큰 생성 및 저장
-   *
-   * @param request
-   * @param email
-   * @param roles
-   * @return
-   */
-  private Mono<TokenInfo> generateToken(OtpRequest request, String email, Object roles,
-      String accountId) {
-    log.debug("generateToken create......{}", request);
-
-    log.debug("admin_access data => {}", request);
-
-    GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-        .builder()
-        .secret(jwtProperties.getSecret())
-        .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-        .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
-        .subject(request.getSiteId())
-        .issuer(email)
-        .claims(
-            Map.of("ROLE", roles, "account_id", accountId, "user_id", email)) // 운영자에 대한 Role이 필요.
-        .build();
-    var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
-        .toBuilder()
-        .build();
-    tokenInfo.setStatus(request.getStatus());
-    log.debug("token info => {}", tokenInfo);
-    return redisTemplateSample.saveToken(email, tokenInfo.toString())
-        .publishOn(Schedulers.boundedElastic())
-        .map(result -> {
-          redisTemplateSample.deleteToken(email + "::OTP").log("delete otp token").subscribe();
-          return tokenInfo;
-        });
-  }
 
   /**
    * QR 코드를 생성해서 리턴한다. (최초 생성)

@@ -43,37 +43,11 @@ public class AuthTokenRouter {
             produces = {
                 MediaType.APPLICATION_JSON_VALUE
             },
-            method = RequestMethod.GET,
+            method = RequestMethod.PUT,
             beanClass = AdminAuthHandler.class,
             beanMethod = "refreshToken",
             operation = @Operation(
                 operationId = "refreshToken",
-                responses = {
-                    @ApiResponse(
-                        responseCode = "200",
-                        description = "successful operation",
-                        content = @Content(schema = @Schema(
-                            implementation = TokenResponse.class
-                        ))
-                    )
-                },
-                requestBody = @RequestBody(
-                    content = @Content(schema = @Schema(
-                        implementation = AuthRequest.class
-                    ))
-                )
-            )
-        ),
-        @RouterOperation(
-            path = "/api/v1/token",
-            produces = {
-                MediaType.APPLICATION_JSON_VALUE
-            },
-            method = RequestMethod.DELETE,
-            beanClass = AdminAuthHandler.class,
-            beanMethod = "deleteToken",
-            operation = @Operation(
-                operationId = "deleteToken",
                 responses = {
                     @ApiResponse(
                         responseCode = "200",
@@ -276,7 +250,6 @@ public class AuthTokenRouter {
     public RouterFunction route() {
         return RouterFunctions.route()
             .PUT("/api/v1/token", adminAuthHandler::refreshToken)
-            .DELETE("/api/v1/token", adminAuthHandler::deleteToken)
             .POST("/api/v1/adm/login", adminAuthHandler::login)
             .POST("/api/v1/adm/otp", adminAuthHandler::otp)
             .POST("/api/v1/adm/passupdate", adminAuthHandler::passwordUpdate)
