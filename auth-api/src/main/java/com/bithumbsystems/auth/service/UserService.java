@@ -162,19 +162,18 @@ public class UserService {
         return userAccountDomainService.findByEmail(AES256Util.encryptAES(config.getKmsKey(), email, true))
                 .flatMap(account -> {
                     log.debug("result account data => {}", account);
-                    if (account.getStatus().equals("9"))
+                    if (account.getStatus().equals("EMAIL_VALID")) {
+                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_EMAIL_VALID));
+                    }else if (account.getStatus().equals("NORMAL") == false)
                         return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
-
+                    Integer failCount = account.getLoginFailCount() == null? 0 : account.getLoginFailCount();
                     if (!passwordEncoder.matches(password, account.getPassword())) {
                         // 로그인 실패 횟수 누적
-                        Integer failCount = account.getLoginFailCount() == null? 1 : account.getLoginFailCount() + 1;
+                        failCount = failCount + 1;
 
                         // 5회이상 실패시 5분 후 다시 시도가능
                         if (account.getLoginFailCount() != null && account.getLoginFailCount() >= 5){
-                            Duration between = Duration.between(account.getLoginFailDate(), LocalDateTime.now());
-                            long sec = between.getSeconds();
-                            log.debug("time duration:{}, {}, {}", sec, account.getLoginFailDate().toString(), LocalDateTime.now().toString());
-                            if(sec <= 300) {
+                            if(isValidLoginFialTime(account.getLoginFailDate()) == false) {
                                 // 5분이 아직 지나지 않았으면 실패 메시지 출력
                                 return Mono.error(new UnauthorizedException(MAXIMUM_AUTH_ATTEMPTS_EXCEEDED));
                             }else{
@@ -185,8 +184,18 @@ public class UserService {
                         // 로그인 실패 횟수를 저장하고 에러 리턴
                         account.setLoginFail(failCount);
                         return userAccountDomainService.save(account).flatMap(userAccount -> {
-                            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                            if(userAccount.getLoginFailCount() >= 5){
+                                //5회 이상 실패시
+                                return Mono.error(new UnauthorizedException(MAXIMUM_AUTHENTICATION_FAIL));
+                            }else {
+                                return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                            }
                         });
+                    }
+
+                    //5회이상 실패 후 5분간 로그인 금지
+                    if(failCount == 5 && isValidLoginFialTime(account.getLoginFailDate()) == false){
+                        return Mono.error(new UnauthorizedException(MAXIMUM_AUTH_ATTEMPTS_EXCEEDED));
                     }
 
                     return generateTokenOne(account, TokenType.ACCESS, clientId)
@@ -203,6 +212,7 @@ public class UserService {
                                 }
                                 account.setLastLoginDate(LocalDateTime.now());
                                 account.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
+                                account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
                                 userAccountDomainService.save(account).then().log("result completed...").subscribe();
                                 return result;
                             });
@@ -210,6 +220,21 @@ public class UserService {
                 .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
     }
 
+    private boolean isValidLoginFialTime(LocalDateTime failTime){
+        if(failTime == null){
+            return true;
+        }
+        Duration between = Duration.between(failTime, LocalDateTime.now());
+        long sec = between.getSeconds();
+        log.debug("time duration:{}, {}, {}", sec, failTime.toString(), LocalDateTime.now().toString());
+        if(sec <= 300) {
+            // 5분이 지나지 않음
+            return false;
+        }else{
+            // 5분이 지남
+            return true;
+        }
+    }
 
     /**
      * 1차 토큰 생성
