@@ -3,19 +3,18 @@ package com.bithumbsystems.auth.core.util;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
-import com.bithumbsystems.auth.data.mongodb.client.entity.Client;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.util.Date;
 import javax.crypto.spec.SecretKeySpec;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
  * The type Jwt verify util.
  */
-@Log4j2
+@Slf4j
 public final class JwtVerifyUtil {
 
     /**
@@ -43,7 +42,7 @@ public final class JwtVerifyUtil {
             throw new UnauthorizedException(ErrorCode.EXPIRED_TOKEN);
         }
 
-        log.debug("return varificationResult");
+        log.debug("return verificationResult");
         return new VerificationResult(claims, token);
     }
 
@@ -57,12 +56,12 @@ public final class JwtVerifyUtil {
      */
     public static Claims getAllClaimsFromToken(String token, String secret) throws UnauthorizedException {
         log.debug("getAllClaimsFromToken called.. {}, {}", secret, token);
-        var apiKeySecretBytes = secret.getBytes();  // DatatypeConverter.parseBase64Binary(secret);
+        var apiKeySecretBytes = secret.getBytes();
         var signatureAlgorithm = SignatureAlgorithm.HS256;
         var signingKey = new SecretKeySpec(apiKeySecretBytes, signatureAlgorithm.getJcaName());
 
         log.debug("Jwts parseBuild...");
-        Claims claims = null;
+        Claims claims;
         try {
             claims = Jwts.parserBuilder()
                     .setSigningKey(signingKey)
@@ -70,7 +69,7 @@ public final class JwtVerifyUtil {
                     .parseClaimsJws(token)
                     .getBody();
         }catch(Exception ex) {
-            //ex.printStackTrace();
+            log.error(ex.getMessage());
             throw new UnauthorizedException(ErrorCode.EXPIRED_TOKEN);
         }
 

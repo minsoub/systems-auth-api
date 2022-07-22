@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.data.mongodb.client.entity;
 
+import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class UserAccount {
     private String name;
     private String phone;
     private String snsId;
-    private String status;
+    private UserStatus status;
     private String otpSecretKey;
     private Integer loginFailCount;
     private LocalDateTime loginFailDate;
