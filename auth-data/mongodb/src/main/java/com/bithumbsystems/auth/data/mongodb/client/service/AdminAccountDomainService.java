@@ -1,12 +1,14 @@
 package com.bithumbsystems.auth.data.mongodb.client.service;
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccess;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.repository.AdminAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+/**
+ * The type Admin account domain service.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminAccountDomainService {
@@ -15,19 +17,18 @@ public class AdminAccountDomainService {
     /**
      * 사용자 정보 조회
      *
-     * @param id
-     * @return
+     * @param id the id
+     * @return mono
      */
     public Mono<AdminAccount> findById(String id) {
         return repository.findById(id);
     }
 
     /**
-     * 사용자 이메일을 통해서 사용자 정보를 조회한다.
-     * 사용자 이메일을 통해서 사용자 정보를 조회한다.
+     * 사용자 이메일을 통해서 사용자 정보를 조회한다. 사용자 이메일을 통해서 사용자 정보를 조회한다.
      *
-     * @param email
-     * @return
+     * @param email the email
+     * @return mono
      */
     public Mono<AdminAccount> findByEmail(String email) {
         return repository.findByEmail(email);
@@ -36,9 +37,9 @@ public class AdminAccountDomainService {
     /**
      * 아이디와 패스워드를 통해서 사용자 정보를 조회한다.
      *
-     * @param email
-     * @param password
-     * @return
+     * @param email    the email
+     * @param password the password
+     * @return mono
      */
     public Mono<AdminAccount> findByEmailAndPassword(String email, String password) {
         return repository.findByEmailAndPassword(email, password);
@@ -47,8 +48,8 @@ public class AdminAccountDomainService {
     /**
      * 사용자 계정정보를 저장한다.
      *
-     * @param data
-     * @return
+     * @param data the data
+     * @return mono
      */
     public Mono<AdminAccount> save(AdminAccount data) {
         return repository.save(data);
