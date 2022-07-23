@@ -1,6 +1,7 @@
 package com.bithumbsystems.auth.core.model.request.token;
 
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +17,5 @@ public class TokenGenerateRequest {
   String email;
   Object roles;
   String accountId;
+  Map<String, Object> claims;
 }

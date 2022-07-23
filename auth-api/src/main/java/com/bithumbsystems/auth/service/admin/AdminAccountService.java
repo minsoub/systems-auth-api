@@ -33,11 +33,11 @@ import software.amazon.awssdk.utils.StringUtils;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class AccountService {
+public class AdminAccountService {
 
   private final AdminAccountDomainService adminAccountDomainService;
   private final OtpService otpService;
-  private final TokenService tokenService;
+  private final AdminTokenService adminTokenService;
   private final PasswordEncoder passwordEncoder;
 
   /**
@@ -164,7 +164,7 @@ public class AccountService {
                 });
           }
 
-          return tokenService.generateTokenOne(account, TokenType.ACCESS)
+          return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
               .map(result -> {
                 log.debug("generateToken => {}", result);
                 result.setEmail(account.getEmail());

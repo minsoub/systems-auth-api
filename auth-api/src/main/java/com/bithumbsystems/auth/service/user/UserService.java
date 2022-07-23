@@ -12,23 +12,20 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DI
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_EMAIL_VALID;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
-import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
-import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
-import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
-import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
+import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
+import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
-import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
-import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -37,7 +34,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * The type User service.
@@ -47,9 +43,8 @@ import reactor.core.scheduler.Schedulers;
 @RequiredArgsConstructor
 public class UserService {
 
-  private final JwtProperties jwtProperties;
   private final UserAccountDomainService userAccountDomainService;
-  private final RedisTemplateSample redisTemplateSample;
+  private final UserTokenService userTokenService;
   private final AwsConfig config;
 
   private final PasswordEncoder passwordEncoder;
@@ -62,7 +57,7 @@ public class UserService {
    * @param userRequest the user request
    * @return mono mono
    */
-  public Mono<TokenInfo> userLogin(Mono<UserRequest> userRequest) {
+  public Mono<TokenResponse> userLogin(Mono<UserRequest> userRequest) {
     return userRequest.flatMap(request -> authenticateUser(
             AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
             , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
@@ -77,7 +72,7 @@ public class UserService {
    * @param userCaptchaRequest the user captcha request
    * @return mono mono
    */
-  public Mono<TokenInfo> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
+  public Mono<TokenResponse> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
     return userCaptchaRequest.flatMap(request -> {
       return captchaService.doVerify(request.getCaptcha())
           .flatMap(result -> {
@@ -156,7 +151,7 @@ public class UserService {
    * @param siteId
    * @return
    */
-  private Mono<TokenInfo> authenticateUser(String email, String password, String siteId) {
+  private Mono<TokenResponse> authenticateUser(String email, String password, String siteId) {
     return userAccountDomainService.findByEmail(
             AES256Util.encryptAES(config.getKmsKey(), email, true))
         .flatMap(account -> {
@@ -198,7 +193,13 @@ public class UserService {
             return Mono.error(new UnauthorizedException(MAXIMUM_AUTH_ATTEMPTS_EXCEEDED));
           }
 
-          return generateToken(account, siteId)
+          return userTokenService.generateToken(TokenGenerateRequest.builder()
+              .accountId(account.getId())
+              .roles("USER")
+              .siteId(siteId)
+              .email(account.getEmail())
+              .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
+              .build())
               .map(result -> {
                 log.debug("generateToken => {}", result);
 
@@ -213,6 +214,10 @@ public class UserService {
         .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
   }
 
+  public Mono<TokenResponse> reGenerateToken(Mono<AuthRequest> authRequest) {
+    return userTokenService.reGenerateToken(authRequest);
+  }
+
   private boolean isValidLoginFailTime(LocalDateTime failTime) {
     if (failTime == null) {
       return false;
@@ -223,40 +228,4 @@ public class UserService {
     // 5분이 지남
     return sec <= 300;
   }
-
-  /**
-   * 1차 토큰 생성
-   *
-   * @param account
-   * @param siteId
-   * @return
-   */
-  private Mono<TokenInfo> generateToken(UserAccount account, String siteId) {
-
-    log.debug("generateTokenOne create......{}", account.getId());
-    return userAccountDomainService.findById(account.getId())
-        .publishOn(Schedulers.boundedElastic())
-        .map(result -> {
-          log.debug("admin_access data => {}", result);
-          GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-              .builder()
-              .secret(jwtProperties.getSecret())
-              .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-              .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
-              .subject(siteId)
-              .issuer(account.getEmail())
-              .claims(Map.of("ROLE", "USER", "account_id", account.getId()))  // 지금은 인증
-              .build();
-
-          var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
-              .toBuilder()
-              .build();
-          redisTemplateSample.saveToken(account.getEmail() + "::LRC", tokenInfo.toString())
-              .log("result -> save success..").subscribe();
-          return tokenInfo;
-        })
-        .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
-  }
-
-
 }

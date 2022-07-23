@@ -6,8 +6,11 @@ import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
-import com.bithumbsystems.auth.service.admin.AccountService;
-import com.bithumbsystems.auth.service.admin.TokenService;
+import com.bithumbsystems.auth.core.model.response.SingleResponse;
+import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
+import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
+import com.bithumbsystems.auth.service.admin.AdminAccountService;
+import com.bithumbsystems.auth.service.admin.AdminTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,9 +22,9 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 public class AdminAuthHandler {
-  private final AccountService accountService;
+  private final AdminAccountService adminAccountService;
 
-  private final TokenService tokenService;
+  private final AdminTokenService adminTokenService;
 
   /**
    * Refresh token mono.
@@ -31,7 +34,7 @@ public class AdminAuthHandler {
    */
   public Mono<ServerResponse> refreshToken(ServerRequest request) {
     Mono<AuthRequest> authRequest = request.bodyToMono(AuthRequest.class);
-    return ServerResponse.ok().body(tokenService.reGenerateToken(authRequest), TokenInfo.class);
+    return ServerResponse.ok().body(adminTokenService.reGenerateToken(authRequest), TokenResponse.class);
   }
 
   /**
@@ -44,7 +47,7 @@ public class AdminAuthHandler {
     log.debug("login called..");
     Mono<UserRequest> userRequest = request.bodyToMono(UserRequest.class);
 
-    return ServerResponse.ok().body(accountService.login(userRequest), TokenOtpInfo.class);
+    return ServerResponse.ok().body(adminAccountService.login(userRequest), TokenOtpInfo.class);
   }
 
   /**
@@ -56,7 +59,7 @@ public class AdminAuthHandler {
   public Mono<ServerResponse> otp(ServerRequest request) {
     Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
 
-    return ServerResponse.ok().body(accountService.otp(otpRequest), TokenInfo.class);
+    return ServerResponse.ok().body(adminAccountService.otp(otpRequest), TokenInfo.class);
   }
 
   /**
@@ -69,7 +72,7 @@ public class AdminAuthHandler {
     log.debug("login called..");
     Mono<UserRequest> userRequest = request.bodyToMono(UserRequest.class);
 
-    return ServerResponse.ok().body(accountService.passwordUpdate(userRequest), TokenOtpInfo.class);
+    return ServerResponse.ok().body(adminAccountService.passwordUpdate(userRequest), SingleResponse.class);
   }
 
   /**
@@ -81,7 +84,7 @@ public class AdminAuthHandler {
   public Mono<ServerResponse> otpClear(ServerRequest request) {
     Mono<OtpClearRequest> otpClearRequestMono = request.bodyToMono(OtpClearRequest.class);
 
-    return ServerResponse.ok().body(accountService.otpClear(otpClearRequestMono), TokenInfo.class);
+    return ServerResponse.ok().body(adminAccountService.otpClear(otpClearRequestMono), AdminAccount.class);
   }
 
 }

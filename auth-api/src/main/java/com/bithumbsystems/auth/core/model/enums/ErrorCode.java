@@ -2,7 +2,6 @@ package com.bithumbsystems.auth.core.model.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 
 @RequiredArgsConstructor
 @Getter
@@ -29,7 +28,10 @@ public enum ErrorCode {
 
   MAXIMUM_AUTH_ATTEMPTS_EXCEEDED("maximum authentication attempts exceeded"),
   MAXIMUM_AUTHENTICATION_FAIL("Maximum authentication fail."),
-  USER_ACCOUNT_EMAIL_VALID("Email verification required.");
+  USER_ACCOUNT_EMAIL_VALID("Email verification required."),
+
+  USER_ALREADY_LOGIN( "User is already login");
+
 
   private final String message;
 }
