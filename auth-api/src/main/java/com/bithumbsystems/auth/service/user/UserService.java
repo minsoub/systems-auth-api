@@ -34,6 +34,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * The type User service.
@@ -200,9 +201,9 @@ public class UserService {
               .email(account.getEmail())
               .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
               .build())
+              .publishOn(Schedulers.boundedElastic())
               .map(result -> {
                 log.debug("generateToken => {}", result);
-
                 account.setLastLoginDate(LocalDateTime.now());
                 account.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
                 account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화

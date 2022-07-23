@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenResponse {
+    private String id;
     private String email;
     private Date issuedAt;
     private Date accessExpiresAt;

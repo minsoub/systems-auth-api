@@ -70,6 +70,7 @@ public class UserTokenService implements TokenService {
         .build();
 
     var tokenResponse = TokenResponse.builder()
+        .id(request.getAccountId())
         .accessToken(tokenInfo.getAccessToken())
         .accessExpiresAt(tokenInfo.getExpiresAt())
         .refreshToken(tokenInfo.getRefreshToken())
@@ -78,7 +79,7 @@ public class UserTokenService implements TokenService {
         .email(request.getEmail())
         .build();
 
-    log.debug("token info => {}", tokenInfo);
+    log.debug("tokenResponse info => {}", tokenResponse);
     return redisTemplateSample.saveToken(request.getEmail() + "::USER", tokenInfo.getAccessToken())
         .map(result -> tokenResponse);
   }
