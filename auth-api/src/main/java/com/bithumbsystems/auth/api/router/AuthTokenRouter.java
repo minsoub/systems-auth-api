@@ -39,7 +39,7 @@ public class AuthTokenRouter {
     @Bean
     @RouterOperations({
         @RouterOperation(
-            path = "/api/v1/token",
+            path = "/api/v1/adm/token",
             produces = {
                 MediaType.APPLICATION_JSON_VALUE
             },
@@ -249,7 +249,7 @@ public class AuthTokenRouter {
     })
     public RouterFunction route() {
         return RouterFunctions.route()
-            .PUT("/api/v1/token", adminAuthHandler::refreshToken)
+            .PUT("/api/v1/adm/token", adminAuthHandler::refreshToken)
             .POST("/api/v1/adm/login", adminAuthHandler::login)
             .POST("/api/v1/adm/otp", adminAuthHandler::otp)
             .POST("/api/v1/adm/passupdate", adminAuthHandler::passwordUpdate)
