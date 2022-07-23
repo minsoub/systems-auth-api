@@ -71,7 +71,9 @@ public class UserTokenService implements TokenService {
 
     var tokenResponse = TokenResponse.builder()
         .accessToken(tokenInfo.getAccessToken())
+        .accessExpiresAt(tokenInfo.getExpiresAt())
         .refreshToken(tokenInfo.getRefreshToken())
+        .refreshExpiresAt(tokenInfo.getRefreshExpiresAt())
         .issuedAt(tokenInfo.getIssuedAt())
         .email(request.getEmail())
         .build();

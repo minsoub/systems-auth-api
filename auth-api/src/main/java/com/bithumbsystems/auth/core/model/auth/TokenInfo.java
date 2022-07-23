@@ -17,5 +17,6 @@ public class TokenInfo {
     private String refreshToken;
     private Date issuedAt;
     private Date expiresAt;
+    private Date refreshExpiresAt;
     private Status status;
 }

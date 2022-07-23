@@ -33,6 +33,7 @@ public class JwtGenerateUtil {
         .refreshToken(refreshToken)
         .issuedAt(createdDate)
         .expiresAt(expirationDate)
+        .refreshExpiresAt(refreshExpirationDate)
         .build();
   }
 
