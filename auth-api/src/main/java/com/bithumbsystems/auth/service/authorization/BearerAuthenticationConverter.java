@@ -44,9 +44,9 @@ public class BearerAuthenticationConverter implements ServerAuthenticationConver
     var subject = claims.getSubject();
     var principal = new UserPrincipal(subject, claims.getIssuer());
 
-    if (claims.get("ROLE") instanceof String role) {
+    if (claims.get("ROLE") instanceof java.lang.String) {
       return Mono.justOrEmpty(
-          new UsernamePasswordAuthenticationToken(principal, null, List.of(new SimpleGrantedAuthority(role))));
+          new UsernamePasswordAuthenticationToken(principal, null, List.of(new SimpleGrantedAuthority((String)claims.get("ROLE")))));
     } else {
       List<String> roles = claims.get("ROLE", List.class);
       var authorities = roles.stream().map(SimpleGrantedAuthority::new)

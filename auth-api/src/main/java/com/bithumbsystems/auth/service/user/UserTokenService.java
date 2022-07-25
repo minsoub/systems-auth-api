@@ -38,7 +38,7 @@ public class UserTokenService implements TokenService {
       log.debug("reGenerateToken data => {}", authRequest);
 
       return JwtVerifyUtil.check(tokenInfo.getRefreshToken(), jwtProperties.getSecret())
-          .flatMap(verificationResult -> redisTemplateSample.getToken((String) verificationResult.claims.get("iss"))
+          .flatMap(verificationResult -> redisTemplateSample.getToken((String) verificationResult.claims.get("iss") + "::LRC")
               .filter(token -> token.equals(tokenInfo.getAccessToken()))
               .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)))
               .then(generateToken(TokenGenerateRequest.builder()
@@ -80,7 +80,7 @@ public class UserTokenService implements TokenService {
         .build();
 
     log.debug("tokenResponse info => {}", tokenResponse);
-    return redisTemplateSample.saveToken(request.getEmail() + "::USER", tokenInfo.getAccessToken())
+    return redisTemplateSample.saveToken(request.getEmail() + "::LRC", tokenInfo.getAccessToken())
         .map(result -> tokenResponse);
   }
 }
