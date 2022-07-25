@@ -37,7 +37,7 @@ public class AuthService {
         .flatMap(verificationResult -> {
           var key = verificationResult.claims.getIssuer();
           if (verificationResult.claims.get("ROLE").equals("USER")) {
-            key += "::USER";
+            key += "::LRC";
           }
           return redisTemplate.getToken(key)
               .filter(token -> token.equals(verificationResult.token))
