@@ -39,7 +39,7 @@ public class AuthTokenRouter {
     @Bean
     @RouterOperations({
         @RouterOperation(
-            path = "/api/v1/token",
+            path = "/api/v1/adm/token",
             produces = {
                 MediaType.APPLICATION_JSON_VALUE
             },
