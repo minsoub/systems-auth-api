@@ -42,7 +42,7 @@ public class BearerAuthenticationConverter implements ServerAuthenticationConver
     public static Mono<Authentication> create(VerificationResult verificationResult) {
         var claims = verificationResult.claims;
         var subject = claims.getSubject();
-        List<String> roles = claims.get("role", List.class);
+        List<String> roles = claims.get("ROLE", List.class);
         var authorities = roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
