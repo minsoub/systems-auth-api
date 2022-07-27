@@ -29,6 +29,7 @@ public class UserAccount {
     private String otpSecretKey;
     private Integer loginFailCount;
     private LocalDateTime loginFailDate;
+    private LocalDateTime changePasswordDate;
     private LocalDateTime createDate;
     private String createAccountId;
     private LocalDateTime updateDate;
