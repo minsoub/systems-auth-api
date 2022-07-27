@@ -188,8 +188,11 @@ public class UserService {
           }
 
           //비밀번호 변경일 체크(비밀번호 사용기간 제한)
-          if(account.getChangePasswordDate() != null){
-              Duration duration = Duration.between(account.getChangePasswordDate(), LocalDateTime.now());
+          LocalDateTime checkDateTime = (account.getChangePasswordDate() == null)? account.getCreateDate() : account.getChangePasswordDate();
+          if(checkDateTime == null) {
+              return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
+          }else{
+              Duration duration = Duration.between(checkDateTime, LocalDateTime.now());
               long sec = duration.getSeconds();
               //3개월
               long durationDate = sec / 60 / 60 / 24;
