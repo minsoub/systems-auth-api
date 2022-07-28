@@ -1,7 +1,6 @@
 package com.bithumbsystems.auth.service.admin;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_OLD_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXPIRED_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_ACCOUNT_CLOSED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
@@ -139,8 +138,11 @@ public class AdminAccountService {
 
   private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
     final var period = 3;
-    return (account.getLastPasswordUpdateDate() == null && account.getCreateDate().isBefore(LocalDateTime.now().minusMonths(period)))
-        || account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
+    if(account.getLastPasswordUpdateDate() == null && account.getCreateDate().isBefore(LocalDateTime.now().minusMonths(period))) {
+      return false;
+    } else
+      return account.getLastPasswordUpdateDate() == null || !account.getLastPasswordUpdateDate()
+          .isBefore(LocalDateTime.now().minusMonths(period));
   }
 
   /**
@@ -154,7 +156,7 @@ public class AdminAccountService {
     return findByEmail(email)
         .flatMap(account -> {
           log.debug("result account data => {}", account);
-          if (!account.getStatus().equals(Status.NORMAL)) {
+          if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
 
@@ -170,7 +172,7 @@ public class AdminAccountService {
 
   private Mono<TokenOtpInfo> loginSuccess(AdminAccount account) {
     if(checkPasswordUpdatePeriod(account)) {
-      return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
+      account.setStatus(Status.CHANGE_PASSWORD);
     }
     return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
         .publishOn(Schedulers.boundedElastic())
