@@ -1,5 +1,7 @@
 package com.bithumbsystems.auth.service.admin;
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_OLD_PASSWORD;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXPIRED_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_ACCOUNT_CLOSED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
@@ -122,6 +124,9 @@ public class AdminAccountService {
     log.debug("email => {}, password => {}", email, password);
     return findByEmail(email)
         .flatMap(account -> {
+          if(checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password, account.getOldPassword())) {
+            return Mono.error(new UnauthorizedException(EQUAL_OLD_PASSWORD));
+          }
           account.setOldPassword(account.getPassword());
           account.setPassword(passwordEncoder.encode(password));
           account.setStatus(Status.NORMAL);
@@ -130,6 +135,11 @@ public class AdminAccountService {
           account.setUpdateAdminAccountId(account.getId());
           return adminAccountDomainService.save(account);
         });
+  }
+
+  private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
+    final var period = 3;
+    return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
   }
 
   /**
@@ -158,6 +168,9 @@ public class AdminAccountService {
   }
 
   private Mono<TokenOtpInfo> loginSuccess(AdminAccount account) {
+    if(checkPasswordUpdatePeriod(account)) {
+      return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
+    }
     return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
         .publishOn(Schedulers.boundedElastic())
         .map(result -> {
