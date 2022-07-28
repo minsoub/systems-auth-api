@@ -1,16 +1,6 @@
 package com.bithumbsystems.auth.service.user;
 
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHENTICATION_FAIL;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.CAPTCHA_FAIL;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTHENTICATION_FAIL;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTH_ATTEMPTS_EXCEEDED;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_EMAIL_VALID;
-
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
@@ -26,15 +16,18 @@ import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 
 /**
  * The type User service.
@@ -51,7 +44,7 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final CaptchaService captchaService;
-
+  private static final int PASSWORD_EXPIRE_DAY = 90;    // 비밀번호 만료일
   /**
    * 일반 사용자 로그인 처리 - 1차 로그인
    *
@@ -192,6 +185,20 @@ public class UserService {
           //5회이상 실패 후 5분간 로그인 금지
           if (failCount == 5 && isValidLoginFailTime(account.getLoginFailDate())) {
             return Mono.error(new UnauthorizedException(MAXIMUM_AUTH_ATTEMPTS_EXCEEDED));
+          }
+
+          //비밀번호 변경일 체크(비밀번호 사용기간 제한)
+          LocalDateTime checkDateTime = (account.getChangePasswordDate() == null)? account.getCreateDate() : account.getChangePasswordDate();
+          if(checkDateTime == null) {
+              return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
+          }else{
+              Duration duration = Duration.between(checkDateTime, LocalDateTime.now());
+              long sec = duration.getSeconds();
+              //3개월
+              long durationDate = sec / 60 / 60 / 24;
+              if(PASSWORD_EXPIRE_DAY < durationDate){
+                  return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
+              }
           }
 
           return userTokenService.generateToken(TokenGenerateRequest.builder()

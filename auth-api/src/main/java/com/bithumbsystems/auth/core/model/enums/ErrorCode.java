@@ -30,7 +30,8 @@ public enum ErrorCode {
   MAXIMUM_AUTHENTICATION_FAIL("Maximum authentication fail."),
   USER_ACCOUNT_EMAIL_VALID("Email verification required."),
 
-  USER_ALREADY_LOGIN( "User is already login");
+  USER_ALREADY_LOGIN( "User is already login"),
+  EXPIRED_PASSWORD("Password expired.");
 
 
   private final String message;
