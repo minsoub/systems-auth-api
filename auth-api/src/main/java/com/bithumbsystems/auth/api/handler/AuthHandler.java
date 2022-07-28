@@ -22,9 +22,9 @@ public class AuthHandler {
    * @param request the request
    * @return mono mono
    */
-  public Mono<ServerResponse> tokenValidate(ServerRequest request) {
+  public Mono<ServerResponse> authorize(ServerRequest request) {
     Mono<TokenValidationRequest> tokenRequest = request.bodyToMono(TokenValidationRequest.class);
-    return ServerResponse.ok().body(authService.tokenValidate(tokenRequest), String.class);
+    return ServerResponse.ok().body(authService.authorize(tokenRequest), String.class);
   }
 
 }

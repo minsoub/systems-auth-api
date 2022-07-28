@@ -21,34 +21,38 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class BearerAuthenticationConverter implements ServerAuthenticationConverter {
 
-    private final JwtProperties jwtProperties;
+  private final JwtProperties jwtProperties;
 
-    @Override
-    public Mono<Authentication> convert(ServerWebExchange exchange) {
-        return Mono.justOrEmpty(exchange)
-                .flatMap(BearerAuthenticationConverter::extract)
-                .filter(MATCH_BEARER_LENGTH)
-                .flatMap(ISOLATE_BEARER_VALUE)
-                .flatMap(token -> check(token, jwtProperties.getSecret()))
-                .flatMap(BearerAuthenticationConverter::create);
+  @Override
+  public Mono<Authentication> convert(ServerWebExchange exchange) {
+    return Mono.justOrEmpty(exchange)
+        .flatMap(BearerAuthenticationConverter::extract)
+        .filter(MATCH_BEARER_LENGTH)
+        .flatMap(ISOLATE_BEARER_VALUE)
+        .flatMap(token -> check(token, jwtProperties.getSecret()))
+        .flatMap(BearerAuthenticationConverter::create);
+  }
+
+  public static Mono<String> extract(ServerWebExchange serverWebExchange) {
+    return Mono.justOrEmpty(serverWebExchange.getRequest()
+        .getHeaders()
+        .getFirst(HttpHeaders.AUTHORIZATION));
+  }
+
+  public static Mono<Authentication> create(VerificationResult verificationResult) {
+    var claims = verificationResult.claims;
+    var subject = claims.getSubject();
+    var principal = new UserPrincipal(subject, claims.getIssuer());
+
+    if (claims.get("ROLE") instanceof java.lang.String) {
+      return Mono.justOrEmpty(
+          new UsernamePasswordAuthenticationToken(principal, null, List.of(new SimpleGrantedAuthority((String)claims.get("ROLE")))));
+    } else {
+      List<String> roles = claims.get("ROLE", List.class);
+      var authorities = roles.stream().map(SimpleGrantedAuthority::new)
+          .collect(Collectors.toList());
+      return Mono.justOrEmpty(
+          new UsernamePasswordAuthenticationToken(principal, null, authorities));
     }
-
-    public static Mono<String> extract(ServerWebExchange serverWebExchange) {
-        return Mono.justOrEmpty(serverWebExchange.getRequest()
-                .getHeaders()
-                .getFirst(HttpHeaders.AUTHORIZATION));
-    }
-
-    public static Mono<Authentication> create(VerificationResult verificationResult) {
-        var claims = verificationResult.claims;
-        var subject = claims.getSubject();
-        List<String> roles = claims.get("role", List.class);
-        var authorities = roles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-        var principal = new UserPrincipal(subject, claims.getIssuer());
-
-        return Mono.justOrEmpty(new UsernamePasswordAuthenticationToken(principal, null, authorities));
-    }
+  }
 }

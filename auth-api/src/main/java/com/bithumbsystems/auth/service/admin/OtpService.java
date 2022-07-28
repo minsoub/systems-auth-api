@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.service.admin;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMER;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMBER;
 
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
@@ -32,7 +32,7 @@ import reactor.core.publisher.Mono;
 public class OtpService {
 
   private final JwtProperties jwtProperties;
-  private final TokenService tokenService;
+  private final AdminTokenService adminTokenService;
 
   /**
    * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
@@ -53,7 +53,7 @@ public class OtpService {
             // 2차 토큰 생성
             log.debug("2차 토큰 생성");
 
-            return tokenService.generateToken(TokenGenerateRequest.builder()
+            return adminTokenService.generateToken(TokenGenerateRequest.builder()
                 .accountId(result.claims.get("account_id").toString())
                 .roles(result.claims.get("ROLE"))
                 .siteId(request.getSiteId())
@@ -62,7 +62,7 @@ public class OtpService {
                 .build());
           } else {
             log.debug("OTP check error");
-            return Mono.error(new UnauthorizedException(INVALID_OTP_NUMER));
+            return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
           }
         });
   }

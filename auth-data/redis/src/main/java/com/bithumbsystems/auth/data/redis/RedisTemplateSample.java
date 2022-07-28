@@ -19,7 +19,6 @@ public class RedisTemplateSample {
    * @return
    */
   public Mono<Boolean> saveToken(String userId, String token) {
-    //return redisTemplate.opsForList().leftPush(userId, token);
     return redisTemplate.opsForValue().set(userId, token);
   }
 

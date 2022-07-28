@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.service.admin;
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_OLD_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_ACCOUNT_CLOSED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
@@ -25,6 +26,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import software.amazon.awssdk.utils.StringUtils;
 
 /**
@@ -33,11 +35,11 @@ import software.amazon.awssdk.utils.StringUtils;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class AccountService {
+public class AdminAccountService {
 
   private final AdminAccountDomainService adminAccountDomainService;
   private final OtpService otpService;
-  private final TokenService tokenService;
+  private final AdminTokenService adminTokenService;
   private final PasswordEncoder passwordEncoder;
 
   /**
@@ -121,6 +123,9 @@ public class AccountService {
     log.debug("email => {}, password => {}", email, password);
     return findByEmail(email)
         .flatMap(account -> {
+          if(checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password, account.getOldPassword())) {
+            return Mono.error(new UnauthorizedException(EQUAL_OLD_PASSWORD));
+          }
           account.setOldPassword(account.getPassword());
           account.setPassword(passwordEncoder.encode(password));
           account.setStatus(Status.NORMAL);
@@ -129,6 +134,15 @@ public class AccountService {
           account.setUpdateAdminAccountId(account.getId());
           return adminAccountDomainService.save(account);
         });
+  }
+
+  private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
+    final var period = 3;
+    if(account.getLastPasswordUpdateDate() == null && account.getCreateDate().isBefore(LocalDateTime.now().minusMonths(period))) {
+      return false;
+    } else
+      return account.getLastPasswordUpdateDate() == null || !account.getLastPasswordUpdateDate()
+          .isBefore(LocalDateTime.now().minusMonths(period));
   }
 
   /**
@@ -142,48 +156,63 @@ public class AccountService {
     return findByEmail(email)
         .flatMap(account -> {
           log.debug("result account data => {}", account);
-          if (account.getStatus().equals(Status.DENY_ACCESS)) {
+          if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
 
           log.debug("password => {}", password);
-          if (!passwordEncoder.matches(password, account.getPassword())) {
-            account.setLoginFailCount(
-                account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
-            if (account.getLoginFailCount() == 5) {
-              account.setStatus(Status.CLOSED_ACCOUNT);
-            }
-
-            return adminAccountDomainService.save(account)
-                .flatMap(result -> {
-                  if (account.getLoginFailCount() >= 5) {
-                    return Mono.error(new UnauthorizedException(INVALID_ACCOUNT_CLOSED));
-                  } else {
-                    return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
-                  }
-                });
+          if (passwordEncoder.matches(password, account.getPassword())) {
+            return loginSuccess(account);
+          } else {
+            return wrongPasswordProcess(account);
           }
-
-          return tokenService.generateTokenOne(account, TokenType.ACCESS)
-              .map(result -> {
-                log.debug("generateToken => {}", result);
-                result.setEmail(account.getEmail());
-                result.setOtpInfo(
-                    otpService.generate(account.getEmail(), account.getOtpSecretKey()));
-                result.setOptKey(account.getOtpSecretKey());
-                result.setStatus(account.getStatus());
-
-                if (StringUtils.isEmpty(account.getOtpSecretKey())) {
-                  // otp_secret_key 등록.
-                  log.debug("otp secret key is null => save data");
-                  account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
-                  account.setLastLoginDate(LocalDateTime.now());
-                  adminAccountDomainService.save(account).then().log("result completed...")
-                      .subscribe();
-                }
-                return result;
-              });
         })
         .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
+  }
+
+  private Mono<TokenOtpInfo> loginSuccess(AdminAccount account) {
+    if(checkPasswordUpdatePeriod(account)) {
+      account.setStatus(Status.CHANGE_PASSWORD);
+    }
+    return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
+        .publishOn(Schedulers.boundedElastic())
+        .map(result -> {
+          log.debug("generateToken => {}", result);
+          result.setEmail(account.getEmail());
+          result.setOtpInfo(
+              otpService.generate(account.getEmail(),
+                  account.getOtpSecretKey()));
+          result.setOptKey(account.getOtpSecretKey());
+          result.setStatus(account.getStatus());
+
+          if (StringUtils.isEmpty(account.getOtpSecretKey())) {
+            // otp_secret_key 등록.
+            log.debug("otp secret key is null => save data");
+            account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
+            account.setLastLoginDate(LocalDateTime.now());
+          }
+          account.setLoginFailCount(0L);
+
+          adminAccountDomainService.save(account).then()
+              .log("result completed...")
+              .subscribe();
+          return result;
+        });
+  }
+
+  private Mono<TokenOtpInfo> wrongPasswordProcess(AdminAccount account) {
+    account.setLoginFailCount(account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
+    if (account.getLoginFailCount() == 5) {
+      account.setStatus(Status.CLOSED_ACCOUNT);
+    }
+
+    return adminAccountDomainService.save(account)
+        .flatMap(result -> {
+          if (account.getLoginFailCount() >= 5) {
+            return Mono.error(new UnauthorizedException(INVALID_ACCOUNT_CLOSED));
+          } else {
+            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+          }
+        });
   }
 }

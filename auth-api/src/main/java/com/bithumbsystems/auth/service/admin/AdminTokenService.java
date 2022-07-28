@@ -15,9 +15,11 @@ import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
+import com.bithumbsystems.auth.data.mongodb.client.entity.RoleManagement;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccessDomainService;
 import com.bithumbsystems.auth.data.mongodb.client.service.RoleManagementDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
+import com.bithumbsystems.auth.service.TokenService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +33,7 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TokenService {
+public class AdminTokenService implements TokenService {
 
   private final JwtProperties jwtProperties;
 
@@ -55,22 +57,27 @@ public class TokenService {
         .flatMap(result -> {
           log.debug("admin_access data => {}", result);
           return roleManagementDomainService.findFirstRole(result.getRoles())
-              .flatMap(roleManagement -> {
-                GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
-                    .builder()
-                    .secret(jwtProperties.getSecret())
-                    .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-                    .subject(roleManagement.getSiteId())
-                    .issuer(account.getEmail())
-                    .claims(
-                        Map.of("ROLE", result.getRoles(), "account_id", account.getId()))  // 지금은 인증
-                    .build();
+              .flatMap(roleManagement -> roleManagementDomainService.findByRoleInIds(result.getRoles())
+                  .map(RoleManagement::getId)
+                  .collectList()
+                  .flatMap(roles -> {
+                        GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
+                            .builder()
+                            .secret(jwtProperties.getSecret())
+                            .expiration(
+                                jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
+                            .subject(roleManagement.getSiteId())
+                            .issuer(account.getEmail())
+                            .claims(
+                                Map.of("ROLE", roles, "account_id", account.getId()))  // 지금은 인증
+                            .build();
 
-                return Mono.just(generateOtp(generateTokenInfo)
-                    .toBuilder()
-                    .siteId(roleManagement.getSiteId())
-                    .build());
-              }).publishOn(Schedulers.boundedElastic()).doOnNext(tokenOtpInfo ->
+                        return Mono.just(generateOtp(generateTokenInfo)
+                            .toBuilder()
+                            .siteId(roleManagement.getSiteId())
+                            .build());
+                      }
+                  )).publishOn(Schedulers.boundedElastic()).doOnNext(tokenOtpInfo ->
                   redisTemplateSample.saveToken(account.getEmail() + "::OTP",
                           tokenOtpInfo.toString())
                       .log("result ->save success..")
@@ -127,15 +134,19 @@ public class TokenService {
       log.debug("reGenerateToken data => {}", authRequest);
 
       return JwtVerifyUtil.check(tokenInfo.getRefreshToken(), jwtProperties.getSecret())
-          .flatMap(verificationResult -> redisTemplateSample.getToken((String) verificationResult.claims.get("iss"))
-              .filter(iss -> iss.equals(verificationResult.claims.get("iss")))
+          .flatMap(verificationResult -> redisTemplateSample.getToken(
+                  (String) verificationResult.claims.get("iss"))
+              .filter(token -> token.equals(tokenInfo.getAccessToken()))
               .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)))
               .then(generateTokenRefresh(TokenGenerateRequest.builder()
-                      .accountId(verificationResult.claims.get("account_id").toString())
-                      .roles(verificationResult.claims.get("ROLE"))
-                      .siteId(verificationResult.claims.get("sub").toString())
-                      .email(verificationResult.claims.getIssuer())
-                      .build())
+                  .accountId(verificationResult.claims.get("account_id").toString())
+                  .roles(verificationResult.claims.get("ROLE"))
+                  .siteId(verificationResult.claims.get("sub").toString())
+                  .email(verificationResult.claims.getIssuer())
+                  .claims(Map.of("ROLE", verificationResult.claims.get("ROLE"),
+                      "account_id", verificationResult.claims.get("account_id").toString(),
+                      "user_id", verificationResult.claims.getIssuer())) // 운영자에 대한 Role이 필요.
+                  .build())
               ));
     });
   }
@@ -151,9 +162,7 @@ public class TokenService {
         .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
         .subject(request.getSiteId())
         .issuer(request.getEmail())
-        .claims(
-            Map.of("ROLE", request.getRoles(), "account_id", request.getAccountId(), "user_id",
-                request.getEmail())) // 운영자에 대한 Role이 필요.
+        .claims(request.getClaims())
         .build();
     var tokenInfo = JwtGenerateUtil.generate(generateTokenInfo)
         .toBuilder()
@@ -168,11 +177,7 @@ public class TokenService {
 
     log.debug("token info => {}", tokenInfo);
     return redisTemplateSample.saveToken(request.getEmail(), tokenInfo.getAccessToken())
-        .publishOn(Schedulers.boundedElastic())
-        .map(result -> {
-          redisTemplateSample.deleteToken(request.getEmail()).log("delete old token").subscribe();
-          return tokenResponse;
-        });
+        .map(result -> tokenResponse);
   }
 
 

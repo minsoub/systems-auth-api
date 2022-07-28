@@ -2,7 +2,6 @@ package com.bithumbsystems.auth.core.model.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.neo4j.Neo4jProperties;
 
 @RequiredArgsConstructor
 @Getter
@@ -19,7 +18,7 @@ public enum ErrorCode {
 
   INVALID_USER("Not ADMIN"),
 
-  INVALID_OTP_NUMER("Invalid Otp Digit number (6)"),
+  INVALID_OTP_NUMBER("Invalid Otp Digit number (6)"),
 
   EXISTED_USER("User is existed."),
 
@@ -29,7 +28,12 @@ public enum ErrorCode {
 
   MAXIMUM_AUTH_ATTEMPTS_EXCEEDED("maximum authentication attempts exceeded"),
   MAXIMUM_AUTHENTICATION_FAIL("Maximum authentication fail."),
-  USER_ACCOUNT_EMAIL_VALID("Email verification required.");
+  USER_ACCOUNT_EMAIL_VALID("Email verification required."),
+
+  USER_ALREADY_LOGIN( "User is already login"),
+  EXPIRED_PASSWORD("Password expired."),
+  EQUAL_OLD_PASSWORD("New password is equal to old password.");
+
 
   private final String message;
 }
