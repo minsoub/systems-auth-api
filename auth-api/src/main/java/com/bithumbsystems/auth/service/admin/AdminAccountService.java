@@ -25,6 +25,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import software.amazon.awssdk.utils.StringUtils;
 
 /**
@@ -142,48 +143,60 @@ public class AdminAccountService {
     return findByEmail(email)
         .flatMap(account -> {
           log.debug("result account data => {}", account);
-          if (account.getStatus().equals(Status.DENY_ACCESS)) {
+          if (!account.getStatus().equals(Status.NORMAL)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
 
           log.debug("password => {}", password);
-          if (!passwordEncoder.matches(password, account.getPassword())) {
-            account.setLoginFailCount(
-                account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
-            if (account.getLoginFailCount() == 5) {
-              account.setStatus(Status.CLOSED_ACCOUNT);
-            }
-
-            return adminAccountDomainService.save(account)
-                .flatMap(result -> {
-                  if (account.getLoginFailCount() >= 5) {
-                    return Mono.error(new UnauthorizedException(INVALID_ACCOUNT_CLOSED));
-                  } else {
-                    return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
-                  }
-                });
+          if (passwordEncoder.matches(password, account.getPassword())) {
+            return loginSuccess(account);
+          } else {
+            return wrongPasswordProcess(account);
           }
-
-          return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
-              .map(result -> {
-                log.debug("generateToken => {}", result);
-                result.setEmail(account.getEmail());
-                result.setOtpInfo(
-                    otpService.generate(account.getEmail(), account.getOtpSecretKey()));
-                result.setOptKey(account.getOtpSecretKey());
-                result.setStatus(account.getStatus());
-
-                if (StringUtils.isEmpty(account.getOtpSecretKey())) {
-                  // otp_secret_key 등록.
-                  log.debug("otp secret key is null => save data");
-                  account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
-                  account.setLastLoginDate(LocalDateTime.now());
-                  adminAccountDomainService.save(account).then().log("result completed...")
-                      .subscribe();
-                }
-                return result;
-              });
         })
         .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
+  }
+
+  private Mono<TokenOtpInfo> loginSuccess(AdminAccount account) {
+    return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
+        .publishOn(Schedulers.boundedElastic())
+        .map(result -> {
+          log.debug("generateToken => {}", result);
+          result.setEmail(account.getEmail());
+          result.setOtpInfo(
+              otpService.generate(account.getEmail(),
+                  account.getOtpSecretKey()));
+          result.setOptKey(account.getOtpSecretKey());
+          result.setStatus(account.getStatus());
+
+          if (StringUtils.isEmpty(account.getOtpSecretKey())) {
+            // otp_secret_key 등록.
+            log.debug("otp secret key is null => save data");
+            account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
+            account.setLastLoginDate(LocalDateTime.now());
+          }
+          account.setLoginFailCount(0L);
+
+          adminAccountDomainService.save(account).then()
+              .log("result completed...")
+              .subscribe();
+          return result;
+        });
+  }
+
+  private Mono<TokenOtpInfo> wrongPasswordProcess(AdminAccount account) {
+    account.setLoginFailCount(account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
+    if (account.getLoginFailCount() == 5) {
+      account.setStatus(Status.CLOSED_ACCOUNT);
+    }
+
+    return adminAccountDomainService.save(account)
+        .flatMap(result -> {
+          if (account.getLoginFailCount() >= 5) {
+            return Mono.error(new UnauthorizedException(INVALID_ACCOUNT_CLOSED));
+          } else {
+            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+          }
+        });
   }
 }
