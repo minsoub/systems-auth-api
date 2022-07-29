@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.service.admin;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMER;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMBER;
 
 import com.bithumbsystems.auth.api.config.property.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
@@ -62,7 +62,7 @@ public class OtpService {
                 .build());
           } else {
             log.debug("OTP check error");
-            return Mono.error(new UnauthorizedException(INVALID_OTP_NUMER));
+            return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
           }
         });
   }
