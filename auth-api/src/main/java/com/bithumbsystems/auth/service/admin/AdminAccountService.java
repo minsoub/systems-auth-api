@@ -20,6 +20,7 @@ import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -159,6 +160,10 @@ public class AdminAccountService {
           log.debug("result account data => {}", account);
           if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+          } else if(account.getValidStartDate() != null && account.getValidEndDate() != null) {
+            if(account.getValidStartDate().isAfter(LocalDate.now()) && account.getValidEndDate().isBefore(LocalDate.now())) {
+              return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+            }
           }
 
           log.debug("password => {}", password);

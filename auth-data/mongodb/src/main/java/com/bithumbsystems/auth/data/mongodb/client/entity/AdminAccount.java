@@ -1,16 +1,15 @@
 package com.bithumbsystems.auth.data.mongodb.client.entity;
 
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 import org.springframework.data.mongodb.core.mapping.MongoId;
-
-import java.time.LocalDateTime;
 
 @Document(collection = "admin_account")
 @AllArgsConstructor
@@ -34,4 +33,6 @@ public class AdminAccount {
     private String createAdminAccountId;
     private LocalDateTime updateDate;
     private String updateAdminAccountId;
+    private LocalDate validStartDate;
+    private LocalDate validEndDate;
 }
