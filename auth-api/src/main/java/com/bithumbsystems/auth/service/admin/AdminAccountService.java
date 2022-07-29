@@ -139,10 +139,11 @@ public class AdminAccountService {
   private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
     final var period = 3;
     if(account.getLastPasswordUpdateDate() == null && account.getCreateDate().isBefore(LocalDateTime.now().minusMonths(period))) {
+      return true;
+    } else if (account.getLastPasswordUpdateDate() == null ){
       return false;
     } else
-      return account.getLastPasswordUpdateDate() == null || !account.getLastPasswordUpdateDate()
-          .isBefore(LocalDateTime.now().minusMonths(period));
+      return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
   }
 
   /**
