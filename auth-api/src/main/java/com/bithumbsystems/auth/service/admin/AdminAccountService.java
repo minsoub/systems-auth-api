@@ -189,8 +189,11 @@ public class AdminAccountService {
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));
           result.setOptKey(account.getOtpSecretKey());
-          result.setStatus(account.getStatus());
-
+          if(account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
+            result.setStatus(Status.INIT_COMPLETE);
+          } else {
+            result.setStatus(account.getStatus());
+          }
           if (StringUtils.isEmpty(account.getOtpSecretKey())) {
             // otp_secret_key 등록.
             log.debug("otp secret key is null => save data");
