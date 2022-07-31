@@ -194,17 +194,18 @@ public class AdminAccountService {
           } else {
             result.setStatus(account.getStatus());
           }
-          if (StringUtils.isEmpty(account.getOtpSecretKey())) {
-            // otp_secret_key 등록.
-            log.debug("otp secret key is null => save data");
-            account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
-            account.setLastLoginDate(LocalDateTime.now());
-          }
-          account.setLoginFailCount(0L);
-
-          adminAccountDomainService.save(account).then()
-              .log("result completed...")
-              .subscribe();
+          // OTP Login 후에 수행하는 것이 맞다.
+//          if (StringUtils.isEmpty(account.getOtpSecretKey())) {
+//            // otp_secret_key 등록.
+//            log.debug("otp secret key is null => save data");
+//            account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
+//            account.setLastLoginDate(LocalDateTime.now());
+//          }
+//          account.setLoginFailCount(0L);
+//
+//          adminAccountDomainService.save(account).then()
+//              .log("result completed...")
+//              .subscribe();
           return result;
         });
   }

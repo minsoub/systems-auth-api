@@ -11,11 +11,14 @@ import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base32;
@@ -33,6 +36,7 @@ public class OtpService {
 
   private final JwtProperties jwtProperties;
   private final AdminTokenService adminTokenService;
+  private final AdminAccountDomainService adminAccountDomainService;
 
   /**
    * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
@@ -59,7 +63,21 @@ public class OtpService {
                 .siteId(request.getSiteId())
                 .status(request.getStatus())
                 .email(result.claims.getIssuer())
-                .build());
+                .build())
+                    .flatMap(res -> {
+
+                      // 사용자 encodeKey 저장.
+                      adminAccountDomainService.findById(result.claims.get("account_id").toString())
+                              .map(res1 -> {
+                                res1.setOtpSecretKey(request.getEncodeKey());
+                                res1.setLastLoginDate(LocalDateTime.now());
+                                res1.setLoginFailCount(0L);
+                                adminAccountDomainService.save(res1).then().log("save otp key info").subscribe();
+                                return res1;
+                              }).then().log("findbyId..").subscribe();
+
+                      return Mono.just(res);
+                    });
           } else {
             log.debug("OTP check error");
             return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
