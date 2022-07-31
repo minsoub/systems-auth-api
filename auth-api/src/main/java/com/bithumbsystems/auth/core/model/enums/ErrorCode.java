@@ -11,6 +11,8 @@ public enum ErrorCode {
   INVALID_TOKEN("Invalid token"),
 
   USER_ACCOUNT_DISABLE("Account disabled"),
+  USER_ACCOUNT_EXPIRED("Account expired"),
+
   INVALID_USER_PASSWORD("Invalid user password!"),
 
   INVALID_ACCOUNT_CLOSED("Account is closed!!"),

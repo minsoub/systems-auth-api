@@ -20,6 +20,7 @@ import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -139,10 +140,11 @@ public class AdminAccountService {
   private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
     final var period = 3;
     if(account.getLastPasswordUpdateDate() == null && account.getCreateDate().isBefore(LocalDateTime.now().minusMonths(period))) {
+      return true;
+    } else if (account.getLastPasswordUpdateDate() == null ){
       return false;
     } else
-      return account.getLastPasswordUpdateDate() == null || !account.getLastPasswordUpdateDate()
-          .isBefore(LocalDateTime.now().minusMonths(period));
+      return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
   }
 
   /**
@@ -158,6 +160,10 @@ public class AdminAccountService {
           log.debug("result account data => {}", account);
           if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+          } else if(account.getValidStartDate() != null && account.getValidEndDate() != null) {
+            if(account.getValidStartDate().isAfter(LocalDate.now()) && account.getValidEndDate().isBefore(LocalDate.now())) {
+              return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+            }
           }
 
           log.debug("password => {}", password);
@@ -183,8 +189,11 @@ public class AdminAccountService {
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));
           result.setOptKey(account.getOtpSecretKey());
-          result.setStatus(account.getStatus());
-
+          if(account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
+            result.setStatus(Status.INIT_COMPLETE);
+          } else {
+            result.setStatus(account.getStatus());
+          }
           if (StringUtils.isEmpty(account.getOtpSecretKey())) {
             // otp_secret_key 등록.
             log.debug("otp secret key is null => save data");

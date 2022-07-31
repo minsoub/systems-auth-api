@@ -252,7 +252,7 @@ public class AuthTokenRouter {
             .PUT("/api/v1/adm/token", adminAuthHandler::refreshToken)
             .POST("/api/v1/adm/login", adminAuthHandler::login)
             .POST("/api/v1/adm/otp", adminAuthHandler::otp)
-            .POST("/api/v1/adm/passupdate", adminAuthHandler::passwordUpdate)
+            .POST("/api/v1/adm/password", adminAuthHandler::passwordUpdate)
             .POST("/api/v1/adm/otp/clear", adminAuthHandler::otpClear)
             .PUT("/api/v1/user/token", userAuthHandler::refreshToken)
             .POST("/api/v1/user/login", userAuthHandler::userLogin)
