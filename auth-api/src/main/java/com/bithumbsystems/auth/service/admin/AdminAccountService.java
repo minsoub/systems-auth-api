@@ -92,7 +92,7 @@ public class AdminAccountService {
     return otpClearRequestMono.flatMap(
         request -> adminAccountDomainService.findByEmail(request.getEmail())
             .flatMap(result -> {
-              result.setOtpSecretKey("");
+              result.setStatus(Status.INIT_OTP_REQUEST);
               return adminAccountDomainService.save(result)
                   .flatMap(adminAccount -> {
                     adminAccount.setPassword("");
@@ -165,7 +165,7 @@ public class AdminAccountService {
           if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           } else if(account.getValidStartDate() != null && account.getValidEndDate() != null) {
-            if(account.getValidStartDate().isAfter(LocalDate.now()) && account.getValidEndDate().isBefore(LocalDate.now())) {
+            if(!(account.getValidStartDate().isBefore(LocalDate.now()) && account.getValidEndDate().isAfter(LocalDate.now()))) {
               return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
             }
           }
