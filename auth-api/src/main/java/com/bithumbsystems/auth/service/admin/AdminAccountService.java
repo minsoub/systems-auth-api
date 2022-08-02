@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.service.admin;
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_CURRENT_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_OLD_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_ACCOUNT_CLOSED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
@@ -127,6 +128,9 @@ public class AdminAccountService {
           if(checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password, account.getOldPassword())) {
             return Mono.error(new UnauthorizedException(EQUAL_OLD_PASSWORD));
           }
+          if(passwordEncoder.matches(password, account.getPassword())) {
+            return Mono.error(new UnauthorizedException(EQUAL_CURRENT_PASSWORD));
+          }
           account.setOldPassword(account.getPassword());
           account.setPassword(passwordEncoder.encode(password));
           account.setStatus(Status.NORMAL);
@@ -190,7 +194,7 @@ public class AdminAccountService {
                   account.getOtpSecretKey()));
           result.setOptKey(account.getOtpSecretKey());
           if(account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
-            result.setStatus(Status.INIT_COMPLETE);
+            result.setStatus(Status.INIT_REQUEST);
           } else {
             result.setStatus(account.getStatus());
           }
