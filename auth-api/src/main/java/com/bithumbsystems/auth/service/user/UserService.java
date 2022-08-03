@@ -53,8 +53,8 @@ public class UserService {
    */
   public Mono<TokenResponse> userLogin(Mono<UserRequest> userRequest) {
     return userRequest.flatMap(request -> authenticateUser(
-            AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
-            , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
+            AES256Util.decryptAES(config.getLrcCryptoKey(), request.getEmail())
+            , AES256Util.decryptAES(config.getLrcCryptoKey(), request.getPasswd())
             , request.getSiteId()
         )
     );
@@ -72,8 +72,8 @@ public class UserService {
           .flatMap(result -> {
             if (result) {
               return authenticateUser(
-                  AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getEmail())
-                  , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_LRC, request.getPasswd())
+                  AES256Util.decryptAES(config.getLrcCryptoKey(), request.getEmail())
+                  , AES256Util.decryptAES(config.getLrcCryptoKey(), request.getPasswd())
                   , request.getSiteId()
               ).switchIfEmpty(Mono.error(new UnauthorizedException(AUTHENTICATION_FAIL)));
             }
@@ -205,7 +205,7 @@ public class UserService {
               .accountId(account.getId())
               .roles("USER")
               .siteId(siteId)
-              .email(AES256Util.encryptAES(AES256Util.CLIENT_AES_KEY_LRC, AES256Util.decryptAES(config.getKmsKey(), account.getEmail()), false))
+              .email(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), account.getEmail()), false))
               .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
               .build())
               .publishOn(Schedulers.boundedElastic())

@@ -65,6 +65,7 @@ public class ParameterStoreConfig {
 
         // KMS Parameter Key
         this.awsConfig.setKmsKey(getParameterValue(awsProperties.getParamStoreKmsName(), KMS_ALIAS_NAME));
+        this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
     }
 
     protected String getParameterValue(String storeName, String type) {

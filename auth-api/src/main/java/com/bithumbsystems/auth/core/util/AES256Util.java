@@ -13,7 +13,6 @@ import java.util.Arrays;
 public class AES256Util {
 
     public static final String CLIENT_AES_KEY_ADM = "fWISVCRBVpGh25HCS1U3a6bwqYewKUop";
-    public static final String CLIENT_AES_KEY_LRC = "X996K2nG3QrDi5Cjyu9aATBoeuTM54m2";
 
     /**
      * Encrypt (AES)
