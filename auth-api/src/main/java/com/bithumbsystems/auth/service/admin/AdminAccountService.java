@@ -30,7 +30,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import software.amazon.awssdk.utils.StringUtils;
 
 /**
  * 관리자/운영자 위한 인증 관련 클래스
@@ -167,7 +166,7 @@ public class AdminAccountService {
           if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           } else if(account.getValidStartDate() != null && account.getValidEndDate() != null) {
-            if(!(account.getValidStartDate().isBefore(LocalDate.now()) && account.getValidEndDate().isAfter(LocalDate.now()))) {
+            if(account.getValidStartDate().isAfter(LocalDate.now()) && account.getValidEndDate().isBefore(LocalDate.now())) {
               return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
             }
           }
