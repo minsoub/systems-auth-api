@@ -14,3 +14,5 @@ cloud:
       doc-name: docdb
       redis-name: redis
       kms-name: kms
+      crypto-name: crypto
+      lrc-name: lrc

@@ -8,6 +8,7 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
 
+import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
@@ -44,6 +45,7 @@ public class AdminAccountService {
   private final AdminTokenService adminTokenService;
   private final PasswordEncoder passwordEncoder;
 
+  private final AwsConfig config;
   /**
    * 사용자 1차 로그인
    *
@@ -52,8 +54,8 @@ public class AdminAccountService {
    */
   public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
     return userRequest.flatMap(request -> authenticate(
-            AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_ADM, request.getEmail())
-            , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_ADM, request.getPasswd())
+            AES256Util.decryptAES(config.getCryptoKey(), request.getEmail())
+            , AES256Util.decryptAES(config.getCryptoKey(), request.getPasswd())
         )
     );
   }
@@ -66,8 +68,8 @@ public class AdminAccountService {
    */
   public Mono<SingleResponse<String>> passwordUpdate(Mono<UserRequest> userRequest) {
     return userRequest.flatMap(request -> passwordUpdate(
-            AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_ADM, request.getEmail())
-            , AES256Util.decryptAES(AES256Util.CLIENT_AES_KEY_ADM, request.getPasswd())
+            AES256Util.decryptAES(config.getCryptoKey(), request.getEmail())
+            , AES256Util.decryptAES(config.getCryptoKey(), request.getPasswd())
         ).map(result -> new SingleResponse<>("OK", ResultCode.SUCCESS))
     );
   }

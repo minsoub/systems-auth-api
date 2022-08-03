@@ -175,7 +175,7 @@ public class AuthTokenRouter {
                     },
                     method = RequestMethod.POST,
                     beanClass = UserAuthHandler.class,
-                    beanMethod = "userLogin",
+                    beanMethod = "",
                     operation = @Operation(
                             operationId = "userLogin",
                             responses = {

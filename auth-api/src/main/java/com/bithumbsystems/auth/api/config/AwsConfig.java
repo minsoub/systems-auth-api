@@ -38,6 +38,8 @@ public class AwsConfig {
     @Value("${cloud.aws.credentials.profile-name}")
     private String profileName;
     private String kmsKey;
+    private String cryptoKey;
+    private String lrcCryptoKey;
     private KmsAsyncClient kmsAsyncClient;
 
     @Value("${spring.profiles.active:}")

@@ -65,6 +65,10 @@ public class LocalParameterStoreConfig {
 
         // KMS Parameter Key
         this.awsConfig.setKmsKey(getParameterValue(awsProperties.getParamStoreKmsName(), KMS_ALIAS_NAME));
+        this.awsConfig.setCryptoKey(getParameterValue(awsProperties.getParamStoreCryptoName().trim(), CRYPT_ALIAS_NAME));
+        log.debug(">> CryptoKey:{}", this.awsConfig.getCryptoKey());
+        this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
+        log.debug(">> LrcCryptoKey:{}", this.awsConfig.getLrcCryptoKey());
     }
 
     protected String getParameterValue(String storeName, String type) {
