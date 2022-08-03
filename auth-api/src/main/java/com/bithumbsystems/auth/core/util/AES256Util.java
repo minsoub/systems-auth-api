@@ -12,8 +12,6 @@ import java.util.Arrays;
 @Log4j2
 public class AES256Util {
 
-    public static final String CLIENT_AES_KEY_ADM = "fWISVCRBVpGh25HCS1U3a6bwqYewKUop";
-
     /**
      * Encrypt (AES)
      * @param keyString

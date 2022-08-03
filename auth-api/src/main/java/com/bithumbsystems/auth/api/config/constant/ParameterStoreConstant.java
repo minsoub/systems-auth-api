@@ -14,7 +14,7 @@ public final class ParameterStoreConstant {
 
   // 고객 관리형 키
   public static final String KMS_ALIAS_NAME = "key";
-
+  public static final String CRYPT_ALIAS_NAME = "key";
   public static final String LRC_CRYPT_ALIAS_NAME = "crypto-key";
 
 }
