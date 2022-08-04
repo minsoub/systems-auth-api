@@ -16,3 +16,4 @@ cloud:
       kms-name: kms
       crypto-name: crypto
       lrc-name: lrc
+      message-name: message

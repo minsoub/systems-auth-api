@@ -4,7 +4,7 @@ import static com.bithumbsystems.auth.api.config.constant.SecurityConstant.ISOLA
 import static com.bithumbsystems.auth.api.config.constant.SecurityConstant.MATCH_BEARER_LENGTH;
 import static com.bithumbsystems.auth.core.util.JwtVerifyUtil.check;
 
-import com.bithumbsystems.auth.api.config.property.JwtProperties;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.core.model.auth.UserPrincipal;
 import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import java.util.List;

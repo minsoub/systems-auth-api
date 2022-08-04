@@ -1,4 +1,4 @@
-package com.bithumbsystems.auth.api.config.property;
+package com.bithumbsystems.auth.api.config.properties;
 
 import lombok.Getter;
 import lombok.Setter;

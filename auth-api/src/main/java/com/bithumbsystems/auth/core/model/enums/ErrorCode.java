@@ -35,6 +35,8 @@ public enum ErrorCode {
   USER_ALREADY_LOGIN( "User is already login"),
   EXPIRED_PASSWORD("Password expired."),
   EQUAL_OLD_PASSWORD("New password is equal to old password."),
+  FAIL_SEND_MAIL("FAIL_SEND_MAIL"),
+
   EQUAL_CURRENT_PASSWORD("New password is equal to current password.");
 
 

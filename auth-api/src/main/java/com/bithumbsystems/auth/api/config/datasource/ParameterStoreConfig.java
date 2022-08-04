@@ -1,10 +1,22 @@
 package com.bithumbsystems.auth.api.config.datasource;
 
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.CRYPT_ALIAS_NAME;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_NAME;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_PASSWORD;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_PORT;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_URL;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_USER;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.KMS_ALIAS_NAME;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.LRC_CRYPT_ALIAS_NAME;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.MAIL_SENDER;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.REDIS_HOST;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.REDIS_PORT;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.REDIS_TOKEN;
+
 import com.bithumbsystems.auth.api.config.AwsConfig;
-import com.bithumbsystems.auth.api.config.local.CredentialsProvider;
-import com.bithumbsystems.auth.api.config.property.AwsProperties;
-import com.bithumbsystems.auth.api.config.property.MongoProperties;
-import com.bithumbsystems.auth.api.config.property.RedisProperties;
+import com.bithumbsystems.auth.api.config.properties.AwsProperties;
+import com.bithumbsystems.auth.api.config.properties.MongoProperties;
+import com.bithumbsystems.auth.api.config.properties.RedisProperties;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -15,8 +27,6 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
 import software.amazon.awssdk.services.ssm.model.GetParameterResponse;
-
-import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.*;
 
 @Log4j2
 @Data
@@ -67,6 +77,7 @@ public class ParameterStoreConfig {
         this.awsConfig.setKmsKey(getParameterValue(awsProperties.getParamStoreKmsName(), KMS_ALIAS_NAME));
         this.awsConfig.setCryptoKey(getParameterValue(awsProperties.getParamStoreCryptoName().trim(), CRYPT_ALIAS_NAME));
         this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
+        this.awsProperties.setEmailSender(getParameterValue(awsProperties.getParamStoreMessageName(), MAIL_SENDER));
     }
 
     protected String getParameterValue(String storeName, String type) {

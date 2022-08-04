@@ -12,18 +12,22 @@ import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
+import com.bithumbsystems.auth.core.model.enums.MailForm;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
+import com.bithumbsystems.auth.core.model.request.AdminRequest;
 import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
+import com.bithumbsystems.auth.core.util.message.MessageService;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,8 +47,9 @@ public class AdminAccountService {
   private final OtpService otpService;
   private final AdminTokenService adminTokenService;
   private final PasswordEncoder passwordEncoder;
-
+  private final MessageService messageService;
   private final AwsConfig config;
+
   /**
    * 사용자 1차 로그인
    *
@@ -126,10 +131,11 @@ public class AdminAccountService {
     log.debug("email => {}, password => {}", email, password);
     return findByEmail(email)
         .flatMap(account -> {
-          if(checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password, account.getOldPassword())) {
+          if (checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password,
+              account.getOldPassword())) {
             return Mono.error(new UnauthorizedException(EQUAL_OLD_PASSWORD));
           }
-          if(passwordEncoder.matches(password, account.getPassword())) {
+          if (passwordEncoder.matches(password, account.getPassword())) {
             return Mono.error(new UnauthorizedException(EQUAL_CURRENT_PASSWORD));
           }
           account.setOldPassword(account.getPassword());
@@ -144,12 +150,14 @@ public class AdminAccountService {
 
   private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
     final var period = 3;
-    if(account.getLastPasswordUpdateDate() == null && account.getCreateDate().isBefore(LocalDateTime.now().minusMonths(period))) {
+    if (account.getLastPasswordUpdateDate() == null && account.getCreateDate()
+        .isBefore(LocalDateTime.now().minusMonths(period))) {
       return true;
-    } else if (account.getLastPasswordUpdateDate() == null ){
+    } else if (account.getLastPasswordUpdateDate() == null) {
       return false;
-    } else
+    } else {
       return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
+    }
   }
 
   /**
@@ -163,10 +171,12 @@ public class AdminAccountService {
     return findByEmail(email)
         .flatMap(account -> {
           log.debug("result account data => {}", account);
-          if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus().equals(Status.CLOSED_ACCOUNT)) {
+          if (account.getStatus().equals(Status.DENY_ACCESS) || account.getStatus()
+              .equals(Status.CLOSED_ACCOUNT)) {
             return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
-          } else if(account.getValidStartDate() != null && account.getValidEndDate() != null) {
-            if(account.getValidStartDate().isAfter(LocalDate.now()) && account.getValidEndDate().isBefore(LocalDate.now())) {
+          } else if (account.getValidStartDate() != null && account.getValidEndDate() != null) {
+            if (account.getValidStartDate().isAfter(LocalDate.now()) && account.getValidEndDate()
+                .isBefore(LocalDate.now())) {
               return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
             }
           }
@@ -182,7 +192,7 @@ public class AdminAccountService {
   }
 
   private Mono<TokenOtpInfo> loginSuccess(AdminAccount account) {
-    if(checkPasswordUpdatePeriod(account)) {
+    if (checkPasswordUpdatePeriod(account)) {
       account.setStatus(Status.CHANGE_PASSWORD);
     }
     return adminTokenService.generateTokenOne(account, TokenType.ACCESS)
@@ -194,7 +204,7 @@ public class AdminAccountService {
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));
           result.setOptKey(account.getOtpSecretKey());
-          if(account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
+          if (account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
             result.setStatus(Status.INIT_REQUEST);
           } else {
             result.setStatus(account.getStatus());
@@ -216,7 +226,8 @@ public class AdminAccountService {
   }
 
   private Mono<TokenOtpInfo> wrongPasswordProcess(AdminAccount account) {
-    account.setLoginFailCount(account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
+    account.setLoginFailCount(
+        account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
     if (account.getLoginFailCount() == 5) {
       account.setStatus(Status.CLOSED_ACCOUNT);
     }
@@ -229,5 +240,29 @@ public class AdminAccountService {
             return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
           }
         });
+  }
+
+  public Mono<AdminAccount> sendTempPasswordMail(Mono<AdminRequest> adminRequestMono) {
+    return adminRequestMono.flatMap(
+        adminRequest -> {
+          log.debug(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
+          return findByEmail(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
+        }).flatMap(account -> {
+      String password = makeTempPassword();
+      messageService.sendMail(account.getEmail(), password, MailForm.DEFAULT);
+            account.setOldPassword(account.getPassword());
+            account.setPassword(passwordEncoder.encode(password));
+            account.setStatus(Status.INIT_REQUEST);
+            account.setLastPasswordUpdateDate(LocalDateTime.now());
+            account.setUpdateDate(LocalDateTime.now());
+            account.setUpdateAdminAccountId(account.getId());
+            return adminAccountDomainService.save(account);
+          });
+  }
+
+  private static String makeTempPassword() {
+    return String.valueOf(System.currentTimeMillis()).substring(0,3)
+        + UUID.randomUUID().toString().replace("-", "").substring(0, 5)
+        + String.valueOf(System.currentTimeMillis()).substring(3,6);
   }
 }
