@@ -16,5 +16,5 @@ public final class ParameterStoreConstant {
   public static final String KMS_ALIAS_NAME = "key";
   public static final String CRYPT_ALIAS_NAME = "key";
   public static final String LRC_CRYPT_ALIAS_NAME = "crypto-key";
-
+  public static final String MAIL_SENDER = "mail_sender";
 }

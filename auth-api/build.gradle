@@ -19,14 +19,17 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'aws-core', version:'2.17.183'
     implementation group: 'software.amazon.awssdk', name: 'ssm', version:'2.17.183'
     implementation group: 'software.amazon.awssdk', name: 'kms', version:'2.17.183'
+    implementation group: 'software.amazon.awssdk', name: 'ses', version:'2.17.183'
 
     implementation 'com.amazonaws:aws-encryption-sdk-java:2.4.0'
     implementation 'com.amazonaws:aws-java-sdk-kms'
 
     implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.1'
+    implementation 'io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1'
     implementation 'io.awspring.cloud:spring-cloud-starter-aws-parameter-store-config:2.4.1'
 
     implementation 'io.micrometer:micrometer-registry-prometheus:1.9.0'
+    implementation 'com.sun.mail:javax.mail:1.6.2'
 
     implementation 'commons-io:commons-io:2.11.0'
     implementation('org.mapstruct:mapstruct:1.4.2.Final')

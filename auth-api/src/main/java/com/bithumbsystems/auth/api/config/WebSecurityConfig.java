@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.api.config;
 
-import com.bithumbsystems.auth.api.config.property.JwtProperties;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.service.authorization.AuthenticationManager;
 import com.bithumbsystems.auth.service.authorization.BearerAuthenticationConverter;
 import org.springframework.beans.factory.annotation.Value;
