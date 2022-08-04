@@ -205,7 +205,7 @@ public class UserService {
               .accountId(account.getId())
               .roles("USER")
               .siteId(siteId)
-              .email(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), account.getEmail()), false))
+              .email(AES256Util.decryptAES(config.getKmsKey(), account.getEmail()))
               .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
               .build())
               .publishOn(Schedulers.boundedElastic())
