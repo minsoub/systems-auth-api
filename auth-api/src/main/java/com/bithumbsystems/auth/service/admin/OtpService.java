@@ -66,6 +66,7 @@ public class OtpService {
                     .siteId(request.getSiteId())
                     .status(request.getStatus())
                     .email(result.claims.getIssuer())
+                    .name(request.getName())
                     .build()
             ).publishOn(Schedulers.boundedElastic()).doOnSuccess(n ->
                 // 사용자 encodeKey 저장.

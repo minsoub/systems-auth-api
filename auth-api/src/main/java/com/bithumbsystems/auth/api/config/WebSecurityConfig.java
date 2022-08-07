@@ -3,6 +3,7 @@ package com.bithumbsystems.auth.api.config;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.service.authorization.AuthenticationManager;
 import com.bithumbsystems.auth.service.authorization.BearerAuthenticationConverter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.security.web.server.authentication.AuthenticationWebF
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 public class WebSecurityConfig {
@@ -59,6 +61,7 @@ public class WebSecurityConfig {
     }
 
     AuthenticationWebFilter bearerAuthenticationFilter(AuthenticationManager authenticationManager) {
+        log.debug("bearerAuthenticationFilter called........");
         AuthenticationWebFilter bearerAuthenticationFilter = new AuthenticationWebFilter(authenticationManager);
         bearerAuthenticationFilter.setServerAuthenticationConverter(new BearerAuthenticationConverter(jwtProperties));
         bearerAuthenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers("/**"));

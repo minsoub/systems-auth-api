@@ -15,6 +15,7 @@ public class TokenGenerateRequest {
   Status status;
   String siteId;
   String email;
+  String name;
   Object roles;
   String accountId;
   Map<String, Object> claims;

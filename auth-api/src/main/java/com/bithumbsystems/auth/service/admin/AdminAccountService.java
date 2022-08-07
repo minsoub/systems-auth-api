@@ -199,7 +199,8 @@ public class AdminAccountService {
         .publishOn(Schedulers.boundedElastic())
         .map(result -> {
           log.debug("generateToken => {}", result);
-          result.setEmail(account.getEmail());
+          result.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail(), false));
+          result.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName(), false)); // name add
           result.setOtpInfo(
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));

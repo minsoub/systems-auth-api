@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OtpRequest {
     String otpNo;
+    String name;
     String encodeKey;
     String siteId;
     String token;

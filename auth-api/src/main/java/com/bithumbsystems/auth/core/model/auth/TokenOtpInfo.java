@@ -16,6 +16,7 @@ import java.util.Date;
 public class TokenOtpInfo {
     private String siteId;
     private String email;
+    private String name;
     private String token;
     private Date issuedAt;
     private Date expiresAt;

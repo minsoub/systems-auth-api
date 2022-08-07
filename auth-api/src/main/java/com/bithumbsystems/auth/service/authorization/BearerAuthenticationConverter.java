@@ -10,6 +10,7 @@ import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,6 +19,7 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @RequiredArgsConstructor
 public class BearerAuthenticationConverter implements ServerAuthenticationConverter {
 
@@ -25,6 +27,7 @@ public class BearerAuthenticationConverter implements ServerAuthenticationConver
 
   @Override
   public Mono<Authentication> convert(ServerWebExchange exchange) {
+    log.debug("BearerAuthenticationConverter convert called...");
     return Mono.justOrEmpty(exchange)
         .flatMap(BearerAuthenticationConverter::extract)
         .filter(MATCH_BEARER_LENGTH)
