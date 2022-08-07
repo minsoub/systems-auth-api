@@ -2,6 +2,7 @@ package com.bithumbsystems.auth.api.handler;
 
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
+import com.bithumbsystems.auth.core.model.request.AdminRequest;
 import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
@@ -18,6 +19,9 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+/**
+ * The type Admin auth handler.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -79,7 +83,7 @@ public class AdminAuthHandler {
    * OTP Key 정보를 Clear 한다.
    *
    * @param request the request
-   * @return mono
+   * @return mono mono
    */
   public Mono<ServerResponse> otpClear(ServerRequest request) {
     Mono<OtpClearRequest> otpClearRequestMono = request.bodyToMono(OtpClearRequest.class);
@@ -87,4 +91,15 @@ public class AdminAuthHandler {
     return ServerResponse.ok().body(adminAccountService.otpClear(otpClearRequestMono), AdminAccount.class);
   }
 
+  /**
+   * Send temp password mail mono.
+   *
+   * @param request the request
+   * @return the mono
+   */
+  public Mono<ServerResponse> sendTempPasswordMail(ServerRequest request) {
+    Mono<AdminRequest> adminRequestMono = request.bodyToMono(AdminRequest.class);
+
+    return ServerResponse.ok().body(adminAccountService.sendTempPasswordMail(adminRequestMono), AdminAccount.class);
+  }
 }

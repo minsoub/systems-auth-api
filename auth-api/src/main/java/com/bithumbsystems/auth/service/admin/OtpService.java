@@ -2,13 +2,14 @@ package com.bithumbsystems.auth.service.admin;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMBER;
 
-import com.bithumbsystems.auth.api.config.property.JwtProperties;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * The type Otp service.
@@ -57,27 +59,28 @@ public class OtpService {
             // 2차 토큰 생성
             log.debug("2차 토큰 생성");
 
-            return adminTokenService.generateToken(TokenGenerateRequest.builder()
-                .accountId(result.claims.get("account_id").toString())
-                .roles(result.claims.get("ROLE"))
-                .siteId(request.getSiteId())
-                .status(request.getStatus())
-                .email(result.claims.getIssuer())
-                .build())
-                    .flatMap(res -> {
-
-                      // 사용자 encodeKey 저장.
-                      adminAccountDomainService.findById(result.claims.get("account_id").toString())
-                              .map(res1 -> {
-                                res1.setOtpSecretKey(request.getEncodeKey());
-                                res1.setLastLoginDate(LocalDateTime.now());
-                                res1.setLoginFailCount(0L);
-                                adminAccountDomainService.save(res1).then().log("save otp key info").subscribe();
-                                return res1;
-                              }).then().log("findbyId..").subscribe();
-
-                      return Mono.just(res);
-                    });
+            return adminTokenService.generateToken(
+                TokenGenerateRequest.builder()
+                    .accountId(result.claims.get("account_id").toString())
+                    .roles(result.claims.get("ROLE"))
+                    .siteId(request.getSiteId())
+                    .status(request.getStatus())
+                    .email(result.claims.getIssuer())
+                    .build()
+            ).publishOn(Schedulers.boundedElastic()).doOnSuccess(n ->
+                // 사용자 encodeKey 저장.
+                adminAccountDomainService.findById(result.claims.get("account_id").toString())
+                    .publishOn(Schedulers.boundedElastic())
+                    .map(account -> {
+                      account.setOtpSecretKey(request.getEncodeKey());
+                      account.setLastLoginDate(LocalDateTime.now());
+                      account.setLoginFailCount(0L);
+                      account.setStatus(Status.NORMAL);
+                      adminAccountDomainService.save(account).then().log("save otp key info")
+                          .subscribe();
+                      return account;
+                    }).then().log("findbyId..").subscribe()
+            ).flatMap(Mono::just);
           } else {
             log.debug("OTP check error");
             return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));

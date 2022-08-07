@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.service;
 
-import com.bithumbsystems.auth.api.config.property.JwtProperties;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.DuplicatedLoginException;
 import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;

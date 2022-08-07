@@ -1,6 +1,7 @@
-package com.bithumbsystems.auth.api.config.property;
+package com.bithumbsystems.auth.api.config.properties;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,6 +24,15 @@ public class AwsProperties {
   @Value("${cloud.aws.param-store.kms-name}")
   private String paramStoreKmsName;
 
+  @Value("${cloud.aws.param-store.crypto-name}")
+  private String paramStoreCryptoName;
 
+  @Value("${cloud.aws.param-store.lrc-name}")
+  private String paramStoreLrcName;
 
+  @Value("${cloud.aws.param-store.message-name}")
+  private String paramStoreMessageName;
+
+  @Setter
+  private String emailSender;
 }

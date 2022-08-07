@@ -1,10 +1,16 @@
 package com.bithumbsystems.auth.api.config;
 
+import static software.amazon.awssdk.services.kms.model.EncryptionAlgorithmSpec.RSAES_OAEP_SHA_256;
+
 import com.amazonaws.encryptionsdk.AwsCrypto;
 import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
-import com.bithumbsystems.auth.api.config.property.AwsProperties;
+import com.bithumbsystems.auth.api.config.properties.AwsProperties;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,14 +25,7 @@ import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.model.DecryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptRequest;
 import software.amazon.awssdk.services.kms.model.EncryptResponse;
-import software.amazon.awssdk.services.kms.model.EncryptionAlgorithmSpec;
-
-import javax.annotation.PostConstruct;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
-
-import static software.amazon.awssdk.services.kms.model.EncryptionAlgorithmSpec.RSAES_OAEP_SHA_256;
+import software.amazon.awssdk.services.ses.SesClient;
 
 @Slf4j
 @Data
@@ -38,8 +37,10 @@ public class AwsConfig {
     @Value("${cloud.aws.credentials.profile-name}")
     private String profileName;
     private String kmsKey;
+    private String cryptoKey;
+    private String lrcCryptoKey;
     private KmsAsyncClient kmsAsyncClient;
-
+    private SesClient sesClient;
     @Value("${spring.profiles.active:}")
     private String activeProfiles;
 
@@ -53,11 +54,20 @@ public class AwsConfig {
                     .credentialsProvider(ProfileCredentialsProvider.create(profileName))
                     .build();
 
+            sesClient =  SesClient.builder()
+                .region(Region.of(awsProperties.getRegion()))
+                .credentialsProvider(ProfileCredentialsProvider.create(profileName))
+                .build();
+
             provider = new com.amazonaws.auth.profile.ProfileCredentialsProvider(profileName);
         }else { // dev, prod
             kmsAsyncClient = KmsAsyncClient.builder()
                     .region(Region.of(awsProperties.getRegion()))
                     .build();
+
+            sesClient =  SesClient.builder()
+                .region(Region.of(awsProperties.getRegion()))
+                .build();
         }
     }
 
