@@ -205,7 +205,7 @@ public class UserService {
               .accountId(account.getId())
               .roles("USER")
               .siteId(siteId)
-              .email(AES256Util.decryptAES(config.getKmsKey(), account.getEmail()))
+              .email(account.getEmail())
               .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
               .build())
               .publishOn(Schedulers.boundedElastic())
@@ -216,6 +216,7 @@ public class UserService {
                 account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
                 userAccountDomainService.save(account).then().log("result completed...")
                     .subscribe();
+                  result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()), false)); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
                 return result;
               });
         })
