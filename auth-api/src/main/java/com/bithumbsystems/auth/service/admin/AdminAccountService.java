@@ -244,26 +244,30 @@ public class AdminAccountService {
   }
 
   public Mono<AdminAccount> sendTempPasswordMail(Mono<AdminRequest> adminRequestMono) {
-    return adminRequestMono.flatMap(
-        adminRequest -> {
+    return adminRequestMono
+        .flatMap(adminRequest -> {
           log.debug(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
           return findByEmail(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
-        }).flatMap(account -> {
-      String password = makeTempPassword();
-      messageService.sendMail(account.getEmail(), password, MailForm.DEFAULT);
-            account.setOldPassword(account.getPassword());
-            account.setPassword(passwordEncoder.encode(password));
-            account.setStatus(Status.INIT_REQUEST);
-            account.setLastPasswordUpdateDate(LocalDateTime.now());
-            account.setUpdateDate(LocalDateTime.now());
-            account.setUpdateAdminAccountId(account.getId());
-            return adminAccountDomainService.save(account);
-          });
+        })
+        .flatMap(account -> {
+          if (account.getStatus().equals(Status.CLOSED_ACCOUNT) || account.getStatus().equals(Status.DENY_ACCESS)) {
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+          }
+          String password = makeTempPassword();
+          messageService.sendMail(account.getEmail(), password, MailForm.DEFAULT);
+          account.setOldPassword(account.getPassword());
+          account.setPassword(passwordEncoder.encode(password));
+          account.setStatus(Status.INIT_REQUEST);
+          account.setLastPasswordUpdateDate(null);
+          account.setUpdateDate(LocalDateTime.now());
+          account.setUpdateAdminAccountId(account.getId());
+          return adminAccountDomainService.save(account);
+        });
   }
 
   private static String makeTempPassword() {
-    return String.valueOf(System.currentTimeMillis()).substring(0,3)
+    return String.valueOf(System.currentTimeMillis()).substring(0, 3)
         + UUID.randomUUID().toString().replace("-", "").substring(0, 5)
-        + String.valueOf(System.currentTimeMillis()).substring(3,6);
+        + String.valueOf(System.currentTimeMillis()).substring(3, 6);
   }
 }
