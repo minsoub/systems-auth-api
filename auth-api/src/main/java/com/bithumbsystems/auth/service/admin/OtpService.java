@@ -10,16 +10,15 @@ import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
+import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Random;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-
-import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base32;
@@ -99,7 +98,7 @@ public class OtpService {
    */
   public OtpResponse generate(String email, String optSecretKey) {
     byte[] buffer = new byte[5 + 5 * 5];
-    new Random().nextBytes(buffer);
+    new SecureRandom().nextBytes(buffer);
     Base32 codec = new Base32();
     byte[] secretKey = Arrays.copyOf(buffer, 10);
     byte[] bEncodedKey = codec.encode(secretKey);

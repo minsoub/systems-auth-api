@@ -101,7 +101,7 @@ public class AdminAccountService {
               result.setStatus(Status.INIT_OTP_REQUEST);
               return adminAccountDomainService.save(result)
                   .flatMap(adminAccount -> {
-                    adminAccount.setPassword("");
+                    adminAccount.setPassword(null);
                     adminAccount.setId("");
                     return Mono.just(adminAccount);
                   });

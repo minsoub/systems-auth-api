@@ -1,6 +1,7 @@
 package com.bithumbsystems.auth.core.util;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 
@@ -14,10 +15,11 @@ public class AES256Util {
 
     /**
      * Encrypt (AES)
-     * @param keyString
-     * @param plainText
-     * @param bUrlSafe
-     * @return
+     *
+     * @param keyString the key string
+     * @param plainText the plain text
+     * @param bUrlSafe  the b url safe
+     * @return string
      */
     public static String encryptAES(String keyString, String plainText, boolean bUrlSafe) {
         String cipherText = "";
@@ -34,9 +36,11 @@ public class AES256Util {
             byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
             byte[] plainTextBytes = plainText.getBytes(StandardCharsets.UTF_8);
 
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             int bsize = cipher.getBlockSize();
-            IvParameterSpec ivspec = new IvParameterSpec(Arrays.copyOfRange(keyBytes, 0, bsize));
+            byte[] iv = Arrays.copyOfRange(keyBytes, 0, bsize);
+            new SecureRandom().nextBytes(iv);
+            IvParameterSpec ivspec = new IvParameterSpec(iv);
 
             SecretKeySpec secureKey = new SecretKeySpec(keyBytes, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, secureKey, ivspec);
@@ -61,9 +65,10 @@ public class AES256Util {
 
     /**
      * Decrypt (AES)
-     * @param keyString
-     * @param cipherText
-     * @return
+     *
+     * @param keyString  the key string
+     * @param cipherText the cipher text
+     * @return string
      */
     public static String decryptAES(String keyString, String cipherText) {
         String plainText = "";
@@ -79,7 +84,7 @@ public class AES256Util {
             byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
             byte[] cipherTextBytes = Base64.decodeBase64(cipherText.getBytes(StandardCharsets.UTF_8));
 
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             int bsize = cipher.getBlockSize();
             IvParameterSpec ivspec = new IvParameterSpec(Arrays.copyOfRange(keyBytes, 0, bsize));
 
