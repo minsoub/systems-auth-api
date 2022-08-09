@@ -6,12 +6,16 @@ import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_PORT;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_URL;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_USER;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.JWT_ACCESS_EXPIRATION;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.JWT_REFRESH_EXPIRATION;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.JWT_SECRET_KEY;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.KMS_ALIAS_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.LRC_CRYPT_ALIAS_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.MAIL_SENDER;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.properties.AwsProperties;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.config.properties.MongoProperties;
 import com.bithumbsystems.auth.api.config.properties.RedisProperties;
 import javax.annotation.PostConstruct;
@@ -35,6 +39,7 @@ public class LocalParameterStoreConfig {
     private MongoProperties mongoProperties;
     private RedisProperties redisProperties;
     private final AwsProperties awsProperties;
+    private final JwtProperties jwtProperties;
     private final CredentialsProvider credentialsProvider;
 
     private final AwsConfig awsConfig;
@@ -70,6 +75,10 @@ public class LocalParameterStoreConfig {
         this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
         log.debug(">> LrcCryptoKey:{}", this.awsConfig.getLrcCryptoKey());
         this.awsProperties.setEmailSender(getParameterValue(awsProperties.getParamStoreMessageName(), MAIL_SENDER));
+
+        this.jwtProperties.setSecret(getParameterValue(awsProperties.getParamStoreAuthName(), JWT_SECRET_KEY));
+        this.jwtProperties.setAccessExpiration(getParameterValue(awsProperties.getParamStoreAuthName(), JWT_ACCESS_EXPIRATION));
+        this.jwtProperties.setRefreshExpiration(getParameterValue(awsProperties.getParamStoreAuthName(), JWT_REFRESH_EXPIRATION));
     }
 
     protected String getParameterValue(String storeName, String type) {

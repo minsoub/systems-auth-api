@@ -64,8 +64,7 @@ public class AdminTokenService implements TokenService {
                         GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
                             .builder()
                             .secret(jwtProperties.getSecret())
-                            .expiration(
-                                jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
+                            .expiration(jwtProperties.getAccessExpiration())
                             .subject(roleManagement.getSiteId())
                             .issuer(account.getEmail())
                             .claims(
@@ -101,8 +100,8 @@ public class AdminTokenService implements TokenService {
     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
         .builder()
         .secret(jwtProperties.getSecret())
-        .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-        .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
+        .expiration(jwtProperties.getAccessExpiration())
+        .refreshExpiration(jwtProperties.getRefreshExpiration())
         .subject(request.getSiteId())
         .issuer(request.getEmail())
         .claims(
@@ -158,8 +157,8 @@ public class AdminTokenService implements TokenService {
     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
         .builder()
         .secret(jwtProperties.getSecret())
-        .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-        .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
+        .expiration(jwtProperties.getAccessExpiration())
+        .refreshExpiration(jwtProperties.getRefreshExpiration())
         .subject(request.getSiteId())
         .issuer(request.getEmail())
         .claims(request.getClaims())

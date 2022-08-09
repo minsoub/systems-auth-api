@@ -17,4 +17,8 @@ public final class ParameterStoreConstant {
   public static final String CRYPT_ALIAS_NAME = "key";
   public static final String LRC_CRYPT_ALIAS_NAME = "crypto-key";
   public static final String MAIL_SENDER = "mail_sender";
+  public static final String JWT_SECRET_KEY = "jwt_secret_key";
+  public static final String JWT_ACCESS_EXPIRATION = "jwt_access_expiration";
+  public static final String JWT_REFRESH_EXPIRATION = "jwt_refresh_expiration";
+
 }

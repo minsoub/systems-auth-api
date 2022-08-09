@@ -42,13 +42,6 @@ logging:
 bithumbsystems:
   auth:
     public-routes: /api/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**
-    jwt:
-      secret: ${auth.api.jwt.secret:eyJzdWIiOiJtaW5zb3ViQGJpdGh1bWJzeXN0ZW1zLmNvbSIsIm5hbWUiOiJCaXRodW1iU3lzdGVtcyIsImlhdCI6MjA5OTEyMzExMjF9.Lpo86rOQtvBRfVKDGhICUWuZ92rgBIVPM9PVAUiRhAM}
-      expiration:
-#        30분
-        access: ${auth.api.jwt.expiration.access:1800}
-#        1시간
-        refresh: ${auth.api.jwt.expiration.refresh:3600}
 
 google:
   recaptcha:
@@ -66,7 +59,7 @@ spring:
     mongodb:
       host: localhost
       port: 27017
-      database: test
+      database: smartadmindb
   redis:
     host: ${auth.redis.host:localhost}
     port: ${auth.redis.port:6379}

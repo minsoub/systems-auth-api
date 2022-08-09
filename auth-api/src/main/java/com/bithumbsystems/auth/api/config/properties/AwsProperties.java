@@ -32,7 +32,8 @@ public class AwsProperties {
 
   @Value("${cloud.aws.param-store.message-name}")
   private String paramStoreMessageName;
-
+  @Value("${cloud.aws.param-store.auth-name}")
+  private String paramStoreAuthName;
   @Setter
   private String emailSender;
 }

@@ -2,17 +2,16 @@ package com.bithumbsystems.auth.api.config.properties;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.Map;
-
-@ConfigurationPropertiesBinding
-@ConfigurationProperties(prefix = "bithumbsystems.auth.jwt")
+@Configuration
 @Getter @Setter
 public class JwtProperties {
 
     private String secret;
 
-    private Map<String, String> expiration;
+    private String accessExpiration;
+
+    private String refreshExpiration;
+
 }

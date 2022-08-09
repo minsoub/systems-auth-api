@@ -5,7 +5,6 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
-import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
@@ -59,8 +58,8 @@ public class UserTokenService implements TokenService {
     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
         .builder()
         .secret(jwtProperties.getSecret())
-        .expiration(jwtProperties.getExpiration().get(TokenType.ACCESS.getValue()))
-        .refreshExpiration(jwtProperties.getExpiration().get(TokenType.REFRESH.getValue()))
+        .expiration(jwtProperties.getAccessExpiration())
+        .refreshExpiration(jwtProperties.getRefreshExpiration())
         .subject(request.getSiteId())
         .issuer(request.getEmail())
         .claims(request.getClaims())

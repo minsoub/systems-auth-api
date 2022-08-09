@@ -18,3 +18,4 @@ cloud:
       crypto-name: crypto
       lrc-name: lrc
       message-name: message
+      auth-name: auth
