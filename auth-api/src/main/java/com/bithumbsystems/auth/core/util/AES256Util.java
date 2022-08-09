@@ -1,25 +1,22 @@
 package com.bithumbsystems.auth.core.util;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.codec.binary.Base64;
-
+import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.Arrays;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.binary.Base64;
 
 @Log4j2
 public class AES256Util {
 
     /**
      * Encrypt (AES)
-     *
-     * @param keyString the key string
-     * @param plainText the plain text
-     * @param bUrlSafe  the b url safe
-     * @return string
+     * @param keyString
+     * @param plainText
+     * @param bUrlSafe
+     * @return
      */
     public static String encryptAES(String keyString, String plainText, boolean bUrlSafe) {
         String cipherText = "";
@@ -36,11 +33,9 @@ public class AES256Util {
             byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
             byte[] plainTextBytes = plainText.getBytes(StandardCharsets.UTF_8);
 
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             int bsize = cipher.getBlockSize();
-            byte[] iv = Arrays.copyOfRange(keyBytes, 0, bsize);
-            new SecureRandom().nextBytes(iv);
-            IvParameterSpec ivspec = new IvParameterSpec(iv);
+            IvParameterSpec ivspec = new IvParameterSpec(Arrays.copyOfRange(keyBytes, 0, bsize));
 
             SecretKeySpec secureKey = new SecretKeySpec(keyBytes, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, secureKey, ivspec);
@@ -65,10 +60,9 @@ public class AES256Util {
 
     /**
      * Decrypt (AES)
-     *
-     * @param keyString  the key string
-     * @param cipherText the cipher text
-     * @return string
+     * @param keyString
+     * @param cipherText
+     * @return
      */
     public static String decryptAES(String keyString, String cipherText) {
         String plainText = "";
@@ -84,7 +78,7 @@ public class AES256Util {
             byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
             byte[] cipherTextBytes = Base64.decodeBase64(cipherText.getBytes(StandardCharsets.UTF_8));
 
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             int bsize = cipher.getBlockSize();
             IvParameterSpec ivspec = new IvParameterSpec(Arrays.copyOfRange(keyBytes, 0, bsize));
 
