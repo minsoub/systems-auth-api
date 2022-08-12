@@ -1,98 +1,116 @@
 package com.bithumbsystems.auth.core.util;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.util.Base64;
 import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.codec.binary.Base64;
 
 @Log4j2
 public class AES256Util {
 
-    /**
-     * Encrypt (AES)
-     * @param keyString
-     * @param plainText
-     * @param bUrlSafe
-     * @return
-     */
-    public static String encryptAES(String keyString, String plainText, boolean bUrlSafe) {
-        String cipherText = "";
-        if ((keyString == null) || keyString.length() == 0 || (plainText == null) || plainText.length() == 0) {
-            throw new RuntimeException("Key is not found!");
-        }
+    private static final String ALGORITHM = "AES/GCM/NoPadding";
+    private static final int TAG_LENGTH_BIT = 128;  // must be one of {128, 120, 112, 104, 96}
+    private static final int IV_LENGTH_BYTE = 12;
+    private static final int SALT_LENGTH_BYTE = 16;
+    private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
-        // 키의 길이는 16, 24, 32 만 지원
-        if ((keyString.length() != 16) && (keyString.length() != 24) && (keyString.length() != 32)) {
-            throw new RuntimeException("Key is invalidate");
-        }
-
-        try {
-            byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
-            byte[] plainTextBytes = plainText.getBytes(StandardCharsets.UTF_8);
-
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            int bsize = cipher.getBlockSize();
-            IvParameterSpec ivspec = new IvParameterSpec(Arrays.copyOfRange(keyBytes, 0, bsize));
-
-            SecretKeySpec secureKey = new SecretKeySpec(keyBytes, "AES");
-            cipher.init(Cipher.ENCRYPT_MODE, secureKey, ivspec);
-            byte[] encrypted = cipher.doFinal(plainTextBytes);
-
-            if (bUrlSafe) {
-                cipherText = Base64.encodeBase64URLSafeString(encrypted);
-            } else {
-                cipherText = new String(Base64.encodeBase64(encrypted), StandardCharsets.UTF_8);
-            }
-
-        } catch (Exception e) {
-            cipherText = "";
-            e.printStackTrace();
-        }
-
-        log.debug("chipherTest => {}", cipherText);
-
-        return cipherText;
+    public static byte[] getRandomNonce(int length) {
+        byte[] nonce = new byte[length];
+        new SecureRandom().nextBytes(nonce);
+        return nonce;
     }
 
+    // AES 128 bits secret key derived from a password
+    public static SecretKey getAESKeyFromPassword(char[] password, byte[] salt)
+        throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-    /**
-     * Decrypt (AES)
-     * @param keyString
-     * @param cipherText
-     * @return
-     */
-    public static String decryptAES(String keyString, String cipherText) {
-        String plainText = "";
-        if ((keyString == null) || keyString.length() == 0 || (cipherText == null) || cipherText.length() == 0) {
-            return plainText;
-        }
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        // iterationCount = 65536
+        // keyLength = 128
+        KeySpec spec = new PBEKeySpec(password, salt, 65536, 128);
+        return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+    }
 
-        if ((keyString.length() != 16) && (keyString.length() != 24) && (keyString.length() != 32)) {
-            return plainText;
-        }
+    // string a base64 encoded AES encrypted text
+    public static String encryptAES(String password, String plainMessage) {
+        var cipherMessage = "";
 
         try {
-            byte[] keyBytes = keyString.getBytes(StandardCharsets.UTF_8);
-            byte[] cipherTextBytes = Base64.decodeBase64(cipherText.getBytes(StandardCharsets.UTF_8));
+            // 16 bytes salt
+            byte[] salt = getRandomNonce(SALT_LENGTH_BYTE);
 
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            int bsize = cipher.getBlockSize();
-            IvParameterSpec ivspec = new IvParameterSpec(Arrays.copyOfRange(keyBytes, 0, bsize));
+            // GCM recommends 12 bytes iv
+            byte[] iv = getRandomNonce(IV_LENGTH_BYTE);
 
-            SecretKeySpec secureKey = new SecretKeySpec(keyBytes, "AES");
-            cipher.init(Cipher.DECRYPT_MODE, secureKey, ivspec);
-            byte[] decrypted = cipher.doFinal(cipherTextBytes);
+            // secret key from password
+            SecretKey aesKeyFromPassword = getAESKeyFromPassword(password.toCharArray(), salt);
 
-            plainText = new String(decrypted, StandardCharsets.UTF_8);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
 
-        } catch (Exception e) {
-            plainText = "";
+            // ASE-GCM needs GCMParameterSpec
+            cipher.init(Cipher.ENCRYPT_MODE, aesKeyFromPassword, new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+
+            byte[] cipherText = cipher.doFinal(plainMessage.getBytes(UTF_8));
+
+            // prefix IV and Salt to cipher text
+            byte[] cipherTextWithIvSalt = ByteBuffer.allocate(iv.length + salt.length + cipherText.length)
+                .put(iv)
+                .put(salt)
+                .put(cipherText)
+                .array();
+
+            // string representation, base64, send this string to other for decryption.
+            cipherMessage = java.util.Base64.getEncoder().encodeToString(cipherTextWithIvSalt);
+        } catch(Exception e) {
+            log.error(e.getMessage());
             e.printStackTrace();
         }
 
-        return plainText;
+        return cipherMessage;
+    }
+
+    // we need the same password, salt and iv to decrypt it
+    public static String decryptAES(String password, String cipherMessage) {
+        var plainMessage = "";
+
+        try {
+            byte[] decode = Base64.getDecoder().decode(cipherMessage.getBytes(UTF_8));
+
+            // get back the iv and salt from the cipher text
+            ByteBuffer bb = ByteBuffer.wrap(decode);
+
+            byte[] iv = new byte[IV_LENGTH_BYTE];
+            bb.get(iv);
+
+            byte[] salt = new byte[SALT_LENGTH_BYTE];
+            bb.get(salt);
+
+            byte[] cipherText = new byte[bb.remaining()];
+            bb.get(cipherText);
+
+            // get back the aes key from the same password and salt
+            SecretKey aesKeyFromPassword = getAESKeyFromPassword(password.toCharArray(), salt);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE, aesKeyFromPassword, new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+
+            byte[] plainText = cipher.doFinal(cipherText);
+
+            plainMessage = new String(plainText, UTF_8);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            e.printStackTrace();
+        }
+        return plainMessage;
     }
 }

@@ -1,6 +1,17 @@
 package com.bithumbsystems.auth.service.user;
 
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHENTICATION_FAIL;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.CAPTCHA_FAIL;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXPIRED_PASSWORD;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTHENTICATION_FAIL;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTH_ATTEMPTS_EXCEEDED;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_EMAIL_VALID;
+
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
@@ -16,18 +27,15 @@ import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
-
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 
 /**
  * The type User service.
@@ -91,7 +99,7 @@ public class UserService {
   public Mono<SingleResponse> join(Mono<UserJoinRequest> joinRequest) {
     log.debug("join called...");
     return joinRequest.flatMap(req -> {
-      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), true);
+      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), req.getEmail());
       return Mono.defer(() -> userAccountDomainService.findByEmail(encryptEmail)
           .map(result -> {
             log.debug("join method fail result => {}", result);
@@ -109,9 +117,9 @@ public class UserService {
    * @return
    */
   private Mono<SingleResponse> userRegister(UserJoinRequest req) {
-    String email = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), true);
-    String name = AES256Util.encryptAES(config.getKmsKey(), req.getName(), true);
-    String phone = AES256Util.encryptAES(config.getKmsKey(), req.getPhone(), true);
+    String email = AES256Util.encryptAES(config.getKmsKey(), req.getEmail());
+    String name = AES256Util.encryptAES(config.getKmsKey(), req.getName());
+    String phone = AES256Util.encryptAES(config.getKmsKey(), req.getPhone());
 
     log.debug("userRegister email => {}", email);
     log.debug("userRegister name => {}", name);
@@ -147,7 +155,7 @@ public class UserService {
    */
   private Mono<TokenResponse> authenticateUser(String email, String password, String siteId) {
     return userAccountDomainService.findByEmail(
-            AES256Util.encryptAES(config.getKmsKey(), email, true))
+            AES256Util.encryptAES(config.getKmsKey(), email))
         .flatMap(account -> {
           log.debug("result account data => {}", account);
           if (account.getStatus().equals(UserStatus.EMAIL_VALID)) {
@@ -216,7 +224,7 @@ public class UserService {
                 account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
                 userAccountDomainService.save(account).then().log("result completed...")
                     .subscribe();
-                  result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()), false)); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
+                  result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()))); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
                 return result;
               });
         })
