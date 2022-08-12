@@ -59,7 +59,7 @@ spring:
     mongodb:
       host: localhost
       port: 27017
-      database: smartadmindb
+      database: test
   redis:
     host: ${auth.redis.host:localhost}
     port: ${auth.redis.port:6379}
