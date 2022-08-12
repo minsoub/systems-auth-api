@@ -19,3 +19,5 @@ cloud:
       lrc-name: lrc
       message-name: message
       auth-name: auth
+      salt-name: salt
+      iv-name: iv

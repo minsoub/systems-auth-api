@@ -70,6 +70,9 @@ public class LocalParameterStoreConfig {
 
         // KMS Parameter Key
         this.awsConfig.setKmsKey(getParameterValue(awsProperties.getParamStoreKmsName(), KMS_ALIAS_NAME));
+        this.awsConfig.setSaltKey(getParameterValue(awsProperties.getParamStoreSaltName(), KMS_ALIAS_NAME));
+        this.awsConfig.setIvKey(getParameterValue(awsProperties.getParamStoreIvName(), KMS_ALIAS_NAME));
+        log.debug(">> DB Crypto:{}, {}, {}", this.awsConfig.getKmsKey(), this.awsConfig.getSaltKey(), this.awsConfig.getIvKey());
         this.awsConfig.setCryptoKey(getParameterValue(awsProperties.getParamStoreCryptoName().trim(), CRYPT_ALIAS_NAME));
         log.debug(">> CryptoKey:{}", this.awsConfig.getCryptoKey());
         this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));

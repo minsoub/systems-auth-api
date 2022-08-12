@@ -99,7 +99,7 @@ public class UserService {
   public Mono<SingleResponse> join(Mono<UserJoinRequest> joinRequest) {
     log.debug("join called...");
     return joinRequest.flatMap(req -> {
-      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), req.getEmail());
+      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), config.getSaltKey(), config.getIvKey());
       return Mono.defer(() -> userAccountDomainService.findByEmail(encryptEmail)
           .map(result -> {
             log.debug("join method fail result => {}", result);
@@ -117,9 +117,9 @@ public class UserService {
    * @return
    */
   private Mono<SingleResponse> userRegister(UserJoinRequest req) {
-    String email = AES256Util.encryptAES(config.getKmsKey(), req.getEmail());
-    String name = AES256Util.encryptAES(config.getKmsKey(), req.getName());
-    String phone = AES256Util.encryptAES(config.getKmsKey(), req.getPhone());
+    String email = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), config.getSaltKey(), config.getIvKey());
+    String name = AES256Util.encryptAES(config.getKmsKey(), req.getName(), config.getSaltKey(), config.getIvKey());
+    String phone = AES256Util.encryptAES(config.getKmsKey(), req.getPhone(), config.getSaltKey(), config.getIvKey());
 
     log.debug("userRegister email => {}", email);
     log.debug("userRegister name => {}", name);
@@ -154,8 +154,10 @@ public class UserService {
    * @return
    */
   private Mono<TokenResponse> authenticateUser(String email, String password, String siteId) {
+      log.debug("getKmsKey:{}", config.getKmsKey());
+      log.debug("enc email:{}", AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey()));
     return userAccountDomainService.findByEmail(
-            AES256Util.encryptAES(config.getKmsKey(), email))
+            AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey()))
         .flatMap(account -> {
           log.debug("result account data => {}", account);
           if (account.getStatus().equals(UserStatus.EMAIL_VALID)) {
