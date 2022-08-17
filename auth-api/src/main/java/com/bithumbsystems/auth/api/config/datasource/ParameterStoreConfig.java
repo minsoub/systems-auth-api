@@ -21,6 +21,7 @@ import com.bithumbsystems.auth.api.config.properties.AwsProperties;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.config.properties.MongoProperties;
 import com.bithumbsystems.auth.api.config.properties.RedisProperties;
+import java.net.URI;
 import javax.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
@@ -34,7 +35,7 @@ import software.amazon.awssdk.services.ssm.model.GetParameterResponse;
 
 @Log4j2
 @Data
-@Profile("dev|prod|eks-dev")
+@Profile("dev|qa|prod|eks-dev")
 @Configuration
 public class ParameterStoreConfig {
 
@@ -62,6 +63,7 @@ public class ParameterStoreConfig {
         this.ssmClient = SsmClient.builder()
             //.credentialsProvider(credentialsProvider.getProvider()) // 로컬에서 개발로 붙을때 사용
             .region(Region.of(awsProperties.getRegion()))
+            .endpointOverride(URI.create(awsProperties.getSsmEndPoint()))
             .build();
 
         this.mongoProperties = new MongoProperties(

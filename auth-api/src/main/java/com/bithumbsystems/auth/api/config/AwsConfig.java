@@ -7,6 +7,7 @@ import com.amazonaws.encryptionsdk.CommitmentPolicy;
 import com.amazonaws.encryptionsdk.CryptoAlgorithm;
 import com.amazonaws.encryptionsdk.kms.KmsMasterKeyProvider;
 import com.bithumbsystems.auth.api.config.properties.AwsProperties;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
@@ -54,21 +55,25 @@ public class AwsConfig {
             kmsAsyncClient = KmsAsyncClient.builder()
                     .region(Region.of(awsProperties.getRegion()))
                     .credentialsProvider(ProfileCredentialsProvider.create(profileName))
+                    .endpointOverride(URI.create(awsProperties.getKmsEndPoint()))
                     .build();
 
             sesClient =  SesClient.builder()
                 .region(Region.of(awsProperties.getRegion()))
                 .credentialsProvider(ProfileCredentialsProvider.create(profileName))
+                .endpointOverride(URI.create(awsProperties.getSesEndPoint()))
                 .build();
 
             provider = new com.amazonaws.auth.profile.ProfileCredentialsProvider(profileName);
         }else { // dev, prod
             kmsAsyncClient = KmsAsyncClient.builder()
                     .region(Region.of(awsProperties.getRegion()))
+                    .endpointOverride(URI.create(awsProperties.getKmsEndPoint()))
                     .build();
 
             sesClient =  SesClient.builder()
                 .region(Region.of(awsProperties.getRegion()))
+                .endpointOverride(URI.create(awsProperties.getSesEndPoint()))
                 .build();
         }
     }

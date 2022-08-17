@@ -93,6 +93,17 @@ mail:
 ---
 spring:
   config:
+    import: classpath:aws-properties-qa.yml, classpath:springdoc.yml
+    activate:
+      on-profile: qa
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml
+mail:
+  logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
+  login-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com
+---
+spring:
+  config:
     import: classpath:aws-properties.yml
     activate:
       on-profile: prod

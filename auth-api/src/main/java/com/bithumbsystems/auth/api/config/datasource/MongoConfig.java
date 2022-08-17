@@ -26,7 +26,7 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 
 @Slf4j
 @Configuration
-@Profile("dev|prod|eks-dev")
+@Profile("dev|qa|prod|eks-dev")
 @RequiredArgsConstructor
 public class MongoConfig extends AbstractReactiveMongoConfiguration {
 
