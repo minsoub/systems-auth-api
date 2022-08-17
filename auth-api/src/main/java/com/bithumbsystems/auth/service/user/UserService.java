@@ -154,6 +154,11 @@ public class UserService {
    * @return
    */
   private Mono<TokenResponse> authenticateUser(String email, String password, String siteId) {
+      log.debug("getKmsKey:{}", config.getKmsKey());
+      log.debug("getSaltKey:{}", config.getSaltKey());
+      log.debug("getIvKey:{}", config.getIvKey());
+      log.debug("email:{}", email);
+      log.debug("enc email:{}", AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey()));
     return userAccountDomainService.findByEmail(
             AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey()))
         .flatMap(account -> {
@@ -213,7 +218,7 @@ public class UserService {
               .accountId(account.getId())
               .roles("USER")
               .siteId(siteId)
-              .email(AES256Util.decryptAES(config.getKmsKey(), account.getEmail()))
+              .email(account.getEmail())
               .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
               .build())
               .publishOn(Schedulers.boundedElastic())
@@ -224,7 +229,7 @@ public class UserService {
                 account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
                 userAccountDomainService.save(account).then().log("result completed...")
                     .subscribe();
-                  result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), result.getEmail())); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
+                  result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()))); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
                 return result;
               });
         })
