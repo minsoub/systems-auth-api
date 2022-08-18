@@ -9,6 +9,7 @@ import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
+import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import java.security.InvalidKeyException;
@@ -75,7 +76,9 @@ public class OtpService {
                       account.setOtpSecretKey(request.getEncodeKey());
                       account.setLastLoginDate(LocalDateTime.now());
                       account.setLoginFailCount(0L);
-                      account.setStatus(Status.NORMAL);
+                      if(!needPasswordChange(account)) {
+                        account.setStatus(Status.NORMAL);
+                      }
                       adminAccountDomainService.save(account).then().log("save otp key info")
                           .subscribe();
                       return account;
@@ -86,6 +89,12 @@ public class OtpService {
             return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
           }
         });
+  }
+
+  private static boolean needPasswordChange(AdminAccount account) {
+    return account.getStatus() == Status.INIT_REQUEST
+        || account.getStatus() == Status.CHANGE_PASSWORD || account.getLastLoginDate() == null
+        || account.getLastPasswordUpdateDate() == null;
   }
 
 
