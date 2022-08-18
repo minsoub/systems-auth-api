@@ -7,7 +7,7 @@ cloud:
     ssm:
       endpoint: https://ssm.ap-northeast-2.amazonaws.com
     ses:
-      endpoint: https://ses.ap-northeast-2.amazonaws.com
+      endpoint: https://email.ap-northeast-2.amazonaws.com
     kms:
       endpoint: https://kms.ap-northeast-2.amazonaws.com
     region:
