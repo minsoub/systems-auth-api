@@ -12,6 +12,8 @@ spring:
       auto-index-creation: true
       uuid-representation: standard
       field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
+  pid:
+    file: ${instance.pid}
 
 management:
   endpoints:
@@ -41,7 +43,7 @@ logging:
 
 bithumbsystems:
   auth:
-    public-routes: /api/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**,/pingpong/health
+    public-routes: /api/v1/**,/webjars/**,/actuator/**,/pingpong/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**
 
 google:
   recaptcha:
