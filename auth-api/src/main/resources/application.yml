@@ -41,7 +41,7 @@ logging:
 
 bithumbsystems:
   auth:
-    public-routes: /api/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**
+    public-routes: /api/v1/**,/webjars/**,/actuator/**,/webjars/swagger-ui/**,/favicon.ico,/swagger-ui.html,/api-docs/**,/pingpong/health
 
 google:
   recaptcha:
