@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfigurat
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
+import org.springframework.boot.context.ApplicationPidFileWriter;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication(exclude = {
@@ -21,6 +22,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 public class AuthAPIApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(AuthAPIApplication.class, args);
+    SpringApplication app = new SpringApplication(AuthAPIApplication.class);
+    app.addListeners(new ApplicationPidFileWriter());
+    app.run(args);
   }
 }
