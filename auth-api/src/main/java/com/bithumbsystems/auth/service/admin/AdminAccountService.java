@@ -96,7 +96,7 @@ public class AdminAccountService {
    */
   public Mono<AdminAccount> otpClear(Mono<OtpClearRequest> otpClearRequestMono) {
     return otpClearRequestMono.flatMap(
-        request -> adminAccountDomainService.findByEmail(request.getEmail())
+        request -> adminAccountDomainService.findByEmail(AES256Util.decryptAES(config.getCryptoKey(), request.getEmail()))
             .flatMap(result -> {
               result.setStatus(Status.INIT_OTP_REQUEST);
               return adminAccountDomainService.save(result)
