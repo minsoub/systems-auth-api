@@ -8,7 +8,7 @@ cloud:
     ssm:
       endpoint: https://ssm.ap-northeast-2.amazonaws.com
     ses:
-      endpoint: email-smtp.ap-northeast-2.amazonaws.com
+      endpoint: vpce-0268e56a68fbd82e0-ikatyjh3.email-smtp.ap-northeast-2.vpce.amazonaws.com
       port: 2587
     kms:
       endpoint: https://kms.ap-northeast-2.amazonaws.com

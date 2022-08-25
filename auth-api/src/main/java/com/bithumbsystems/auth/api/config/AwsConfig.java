@@ -3,7 +3,6 @@ package com.bithumbsystems.auth.api.config;
 import com.bithumbsystems.auth.api.config.properties.AwsProperties;
 import java.net.URI;
 import javax.annotation.PostConstruct;
-import javax.mail.MessagingException;
 import javax.mail.Transport;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +35,7 @@ public class AwsConfig {
     private com.amazonaws.auth.profile.ProfileCredentialsProvider provider;
 
     @PostConstruct
-    public void init() throws MessagingException {
+    public void init() {
         if (activeProfiles.equals("local") || activeProfiles.equals("default")) {
             kmsAsyncClient = KmsAsyncClient.builder()
                     .region(Region.of(awsProperties.getRegion()))
