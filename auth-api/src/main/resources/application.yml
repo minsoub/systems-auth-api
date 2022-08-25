@@ -12,6 +12,8 @@ spring:
       auto-index-creation: true
       uuid-representation: standard
       field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
+  redis:
+    timeout: 60000
   pid:
     file: ${instance.pid}
 
@@ -20,6 +22,9 @@ management:
     web:
       exposure:
         include: metrics, prometheus, health
+  health:
+    redis:
+      enabled: false
 
 logging:
   level:
@@ -88,7 +93,7 @@ spring:
     activate:
       on-profile: eks-dev
 logging:
-  config: classpath:logback-spring-dev.xml
+  config: classpath:logback-spring-${spring.profiles.active}.xml
 mail:
   logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
   login-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com

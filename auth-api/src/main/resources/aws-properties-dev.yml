@@ -11,7 +11,7 @@ cloud:
       endpoint: vpce-0bf60f241bc6a2e72-qojbj6s0.email-smtp.ap-northeast-2.vpce.amazonaws.com
       port: 2587
     kms:
-      endpoint: https://vpce-0d2252033d361bfff-9zm8y5uq.kms.ap-northeast-2.vpce.amazonaws.com
+      endpoint: https://vpce-0d2252033d361bfff-fzm8y5uq.kms.ap-northeast-2.vpce.amazonaws.com
     region:
       static: ${auth.aws.region:ap-northeast-2}
       auto: ${auth.aws.region.auto:false}
