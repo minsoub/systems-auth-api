@@ -49,6 +49,13 @@ public class AwsProperties {
   private String paramStoreMessageName;
   @Value("${cloud.aws.param-store.auth-name}")
   private String paramStoreAuthName;
+  @Value("${cloud.aws.ses.port}")
+  private String smtpPort;
   @Setter
   private String emailSender;
+  @Setter
+  private String smtpUserName;
+  @Setter
+  private String smtpUserPassword;
+
 }

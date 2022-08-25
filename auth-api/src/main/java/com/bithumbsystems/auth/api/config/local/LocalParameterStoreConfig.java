@@ -12,6 +12,8 @@ import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.KMS_ALIAS_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.LRC_CRYPT_ALIAS_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.MAIL_SENDER;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.SMTP_PASSWORD;
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.SMTP_USERNAME;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.properties.AwsProperties;
@@ -80,6 +82,8 @@ public class LocalParameterStoreConfig {
         this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
         log.debug(">> LrcCryptoKey:{}", this.awsConfig.getLrcCryptoKey());
         this.awsProperties.setEmailSender(getParameterValue(awsProperties.getParamStoreMessageName(), MAIL_SENDER));
+        this.awsProperties.setSmtpUserName(getParameterValue(awsProperties.getParamStoreMessageName(), SMTP_USERNAME));
+        this.awsProperties.setSmtpUserPassword(getParameterValue(awsProperties.getParamStoreMessageName(), SMTP_PASSWORD));
 
         this.jwtProperties.setSecret(getParameterValue(awsProperties.getParamStoreAuthName(), JWT_SECRET_KEY));
         this.jwtProperties.setAccessExpiration(getParameterValue(awsProperties.getParamStoreAuthName(), JWT_ACCESS_EXPIRATION));
