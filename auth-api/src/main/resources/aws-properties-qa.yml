@@ -8,7 +8,8 @@ cloud:
     ssm:
       endpoint: https://vpce-04326400aef7645c7-kdwr2h83.ssm.ap-northeast-2.vpce.amazonaws.com
     ses:
-      endpoint: https://vpce-0bf60f241bc6a2e72-qojbj6s0.email-smtp.ap-northeast-2.vpce.amazonaws.com
+      endpoint: vpce-0b0ba29de6d8fbd9c-8vu3ti47.email-smtp.ap-northeast-2.vpce.amazonaws.com
+      port: 2587
     kms:
       endpoint: https://vpce-08afe93a2964ce800-2gp1tcsw.kms.ap-northeast-2.vpce.amazonaws.com
     region:
