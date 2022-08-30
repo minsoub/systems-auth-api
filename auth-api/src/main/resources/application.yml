@@ -53,7 +53,7 @@ bithumbsystems:
 google:
   recaptcha:
     verify:
-      url: https://www.google.com/recaptcha/api/siteverify
+      url: http://localhost:7071/recaptcha/api/siteverify
     secret:
       lrc: 6Lef7JcfAAAAAKFN2Wta__cXutJ4wCMeCadxl3Eq
 ---

@@ -44,6 +44,8 @@ public class CaptchaService {
         .retrieve()
         .bodyToMono(Map.class)
         .map(resultMap -> {
+          log.debug("resultMap:{}", resultMap);
+          log.debug("resultMap-success:{}", resultMap.get("success"));
           if (resultMap != null && resultMap.containsKey("success") && resultMap.get("success") instanceof Boolean) {
             return (Boolean) resultMap.get("success");
           } else {
