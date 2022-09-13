@@ -37,8 +37,9 @@ public enum ErrorCode {
   EQUAL_OLD_PASSWORD("New password is equal to old password."),
   FAIL_SEND_MAIL("FAIL_SEND_MAIL"),
 
-  EQUAL_CURRENT_PASSWORD("New password is equal to current password.");
+  EQUAL_CURRENT_PASSWORD("New password is equal to current password."),
 
+  LOGIN_USER_NOT_MATCHED("Login user not match");
 
   private final String message;
 }
