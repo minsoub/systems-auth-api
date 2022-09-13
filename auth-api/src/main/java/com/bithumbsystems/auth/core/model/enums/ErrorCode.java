@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum ErrorCode {
   INVALID_CLIENT("client is not registered."),
+  INVALID_HEADER_SITE_ID("Header 정보가 유효하지 않습니다!!(Not found site_id)"),
   EXPIRED_TOKEN("Token expired"),
   INVALID_TOKEN("Invalid token"),
 
