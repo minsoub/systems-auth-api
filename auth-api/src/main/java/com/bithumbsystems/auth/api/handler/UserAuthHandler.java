@@ -1,9 +1,14 @@
 package com.bithumbsystems.auth.api.handler;
 
+import com.bithumbsystems.auth.api.config.AwsConfig;
+import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
+import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
+import com.bithumbsystems.auth.core.model.response.KeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.service.user.UserService;
@@ -13,6 +18,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * The type Auth handler.
@@ -24,6 +32,42 @@ public class UserAuthHandler {
 
   private final UserService userService;
 
+  private final AwsConfig config;
+
+  /**
+   * Crypto Key를 리턴한다.
+   *
+   * @param request
+   * @return
+   */
+  public Mono<ServerResponse> initKey(ServerRequest request) {
+    String siteId = null;
+    String cryptoKey = null;
+    if (!request.exchange().getRequest().getHeaders().containsKey(SecurityConstant.SITE_ID)) {
+      log.debug(">>>>> SITE ID NOT CONTAINS <<<<<");
+      log.debug(">>>>>HEADER => {}", request.exchange().getRequest().getHeaders());
+      log.debug(">>>>>URI => {}", request.exchange().getRequest().getURI());
+
+      throw new UnauthorizedException(ErrorCode.INVALID_HEADER_SITE_ID);
+    } else {
+      siteId = request.exchange().getRequest().getHeaders().getFirst(SecurityConstant.SITE_ID);
+    }
+
+    // LRC/CPC/SMART-ADMIN
+    if (siteId.equals(SecurityConstant.CPC_SITE_ID)) {
+      cryptoKey = config.getCpcCryptoKey();
+    } else if(siteId.equals(SecurityConstant.LRC_SITE_ID)) {
+      cryptoKey = config.getLrcCryptoKey();
+    } else if(siteId.equals(SecurityConstant.MNG_SITE_ID)) {
+      cryptoKey = config.getCryptoKey();
+    }
+
+    KeyResponse res = KeyResponse.builder()
+            .initData(Base64.getEncoder().encodeToString(cryptoKey.getBytes(StandardCharsets.UTF_8)))
+            .build();
+
+    return ServerResponse.ok().bodyValue(res);
+  }
   /**
    * Refresh token mono.
    *

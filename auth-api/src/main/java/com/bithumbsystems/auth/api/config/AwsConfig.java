@@ -27,6 +27,7 @@ public class AwsConfig {
     private String ivKey;
     private String cryptoKey;
     private String lrcCryptoKey;
+    private String cpcCryptoKey;
     private KmsAsyncClient kmsAsyncClient;
     private Transport transport;
     @Value("${spring.profiles.active:}")
