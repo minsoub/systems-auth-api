@@ -5,8 +5,7 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHENTICATION_
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.CAPTCHA_FAIL;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXPIRED_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USERNAME;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.LOGIN_USER_NOT_MATCHED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTHENTICATION_FAIL;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTH_ATTEMPTS_EXCEEDED;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
@@ -185,7 +184,7 @@ public class UserService {
                 //5회 이상 실패시
                 return Mono.error(new UnauthorizedException(MAXIMUM_AUTHENTICATION_FAIL));
               } else {
-                return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+                return Mono.error(new UnauthorizedException(LOGIN_USER_NOT_MATCHED));
               }
             });
           }
@@ -228,7 +227,7 @@ public class UserService {
                 return result;
               });
         })
-        .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_USERNAME)));
+        .switchIfEmpty(Mono.error(new UnauthorizedException(LOGIN_USER_NOT_MATCHED)));
   }
 
   public Mono<TokenResponse> reGenerateToken(Mono<AuthRequest> authRequest) {
