@@ -28,6 +28,8 @@ import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainSer
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -128,9 +130,11 @@ public class AdminAccountService {
    * @return mono
    */
   public Mono<AdminAccount> passwordUpdate(String email, String password) {
-    log.debug("email => {}, password => {}", email, password);
     return findByEmail(email)
         .flatMap(account -> {
+          if(!isValidPassword(password)) {
+            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+          }
           if (checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password,
               account.getOldPassword())) {
             return Mono.error(new UnauthorizedException(EQUAL_OLD_PASSWORD));
@@ -210,18 +214,6 @@ public class AdminAccountService {
           } else {
             result.setStatus(account.getStatus());
           }
-          // OTP Login 후에 수행하는 것이 맞다.
-//          if (StringUtils.isEmpty(account.getOtpSecretKey())) {
-//            // otp_secret_key 등록.
-//            log.debug("otp secret key is null => save data");
-//            account.setOtpSecretKey(result.getOtpInfo().getEncodeKey());
-//            account.setLastLoginDate(LocalDateTime.now());
-//          }
-//          account.setLoginFailCount(0L);
-//
-//          adminAccountDomainService.save(account).then()
-//              .log("result completed...")
-//              .subscribe();
           return result;
         });
   }
@@ -269,5 +261,12 @@ public class AdminAccountService {
     return String.valueOf(System.currentTimeMillis()).substring(0, 3)
         + UUID.randomUUID().toString().replace("-", "").substring(0, 5)
         + String.valueOf(System.currentTimeMillis()).substring(3, 6);
+  }
+
+  private static boolean isValidPassword(String password) {
+    var regex = "^.*(?=^.{8,64}$)(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^*]).*$";
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(password);
+    return matcher.matches();
   }
 }
