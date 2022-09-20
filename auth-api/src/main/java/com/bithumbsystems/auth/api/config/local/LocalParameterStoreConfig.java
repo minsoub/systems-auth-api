@@ -1,5 +1,6 @@
 package com.bithumbsystems.auth.api.config.local;
 
+import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.CPC_CRYPT_ALIAS_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.CRYPT_ALIAS_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_NAME;
 import static com.bithumbsystems.auth.api.config.constant.ParameterStoreConstant.DB_PASSWORD;
@@ -81,6 +82,8 @@ public class LocalParameterStoreConfig {
         log.debug(">> CryptoKey:{}", this.awsConfig.getCryptoKey());
         this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
         log.debug(">> LrcCryptoKey:{}", this.awsConfig.getLrcCryptoKey());
+        this.awsConfig.setCpcCryptoKey(getParameterValue(awsProperties.getParamStoreCpcName().trim(), CPC_CRYPT_ALIAS_NAME));
+        log.debug(">> CpcCryptoKey:{}", this.awsConfig.getCpcCryptoKey());
         this.awsProperties.setEmailSender(getParameterValue(awsProperties.getParamStoreMessageName(), MAIL_SENDER));
         this.awsProperties.setSmtpUserName(getParameterValue(awsProperties.getParamStoreMessageName(), SMTP_USERNAME).trim());
         this.awsProperties.setSmtpUserPassword(getParameterValue(awsProperties.getParamStoreMessageName(), SMTP_PASSWORD).trim());
