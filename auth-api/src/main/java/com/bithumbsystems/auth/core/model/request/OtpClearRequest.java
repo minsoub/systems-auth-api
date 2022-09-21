@@ -10,6 +10,5 @@ import lombok.NoArgsConstructor;
 public class OtpClearRequest {
     private String siteId;
     private String email;
-    private String otpKey;
     private String token;
 }

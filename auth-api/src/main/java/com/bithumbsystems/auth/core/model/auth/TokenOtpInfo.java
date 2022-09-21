@@ -22,6 +22,6 @@ public class TokenOtpInfo {
     private Date expiresAt;
     private OtpResponse otpInfo;
     private String id;
-    private String optKey;
+    private Boolean isCode;
     private Status status;
 }
