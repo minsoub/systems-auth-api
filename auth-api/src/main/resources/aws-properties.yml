@@ -23,6 +23,7 @@ cloud:
       kms-name: kms
       crypto-name: crypto
       lrc-name: lrc
+      cpc-name: cpc
       message-name: message
       auth-name: auth
       salt-name: salt

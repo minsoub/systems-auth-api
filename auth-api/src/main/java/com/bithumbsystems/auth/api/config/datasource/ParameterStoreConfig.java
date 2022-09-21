@@ -72,7 +72,7 @@ public class ParameterStoreConfig {
         this.awsConfig.setIvKey(getParameterValue(awsProperties.getParamStoreIvName(), KMS_ALIAS_NAME));
         this.awsConfig.setCryptoKey(getParameterValue(awsProperties.getParamStoreCryptoName().trim(), CRYPT_ALIAS_NAME));
         this.awsConfig.setLrcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), LRC_CRYPT_ALIAS_NAME));
-        this.awsConfig.setCpcCryptoKey(getParameterValue(awsProperties.getParamStoreLrcName().trim(), CPC_CRYPT_ALIAS_NAME));
+        this.awsConfig.setCpcCryptoKey(getParameterValue(awsProperties.getParamStoreCpcName().trim(), CPC_CRYPT_ALIAS_NAME));
         this.awsProperties.setEmailSender(getParameterValue(awsProperties.getParamStoreMessageName(), MAIL_SENDER));
         this.awsProperties.setSmtpUserName(getParameterValue(awsProperties.getParamStoreMessageName(), SMTP_USERNAME).trim());
         this.awsProperties.setSmtpUserPassword(getParameterValue(awsProperties.getParamStoreMessageName(), SMTP_PASSWORD).trim());
