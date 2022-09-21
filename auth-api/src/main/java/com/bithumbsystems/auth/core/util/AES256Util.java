@@ -38,7 +38,7 @@ public class AES256Util {
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         // iterationCount = 65536
         // keyLength = 128
-        KeySpec spec = new PBEKeySpec(password, salt, 1024, 256);
+        KeySpec spec = new PBEKeySpec(password, salt, 1024, 128);
         return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
     }
 
