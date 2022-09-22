@@ -14,12 +14,16 @@ import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.data.redis.entity.OtpHistory;
+import com.bithumbsystems.auth.data.redis.service.OtpHistoryDomainService;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +45,7 @@ public class OtpService {
   private final JwtProperties jwtProperties;
   private final AdminTokenService adminTokenService;
   private final AdminAccountDomainService adminAccountDomainService;
+  private final OtpHistoryDomainService otpHistoryDomainService;
 
   private final AwsConfig config;
   /**
@@ -54,6 +59,12 @@ public class OtpService {
     log.debug("otp validation check start => {}", request);
 
     String endcodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getEncodeKey());
+    Optional<OtpHistory> otpHistoryOptional = otpHistoryDomainService.searchOtpHistory(request.getSiteId() + ":" + endcodeKey + ":" + request.getOtpNo());
+
+    // 1번 사용했던 OTP 번호 재시도 시 오류 처리(보안취약점 - 자동화공격 방지)
+    if (otpHistoryOptional.isPresent()) {
+      return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
+    }
 
     return JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
         .flatMap(result -> {
@@ -73,7 +84,12 @@ public class OtpService {
                     .email(result.claims.getIssuer())
                     .name(request.getName())
                     .build()
-            ).publishOn(Schedulers.boundedElastic()).doOnSuccess(n ->
+            ).publishOn(Schedulers.boundedElastic()).doOnSuccess(n -> {
+                // OTP 조회 이력 Redis에 저장
+                otpHistoryDomainService.save(OtpHistory.builder()
+                    .id(request.getSiteId() + ":" + endcodeKey + ":" + request.getOtpNo())
+                    .build());
+
                 // 사용자 encodeKey 저장.
                 adminAccountDomainService.findById(result.claims.get("account_id").toString())
                     .publishOn(Schedulers.boundedElastic())
@@ -81,13 +97,14 @@ public class OtpService {
                       account.setOtpSecretKey(endcodeKey); // request.getEncodeKey());
                       account.setLastLoginDate(LocalDateTime.now());
                       account.setLoginFailCount(0L);
-                      if(!needPasswordChange(account)) {
+                      if (!needPasswordChange(account)) {
                         account.setStatus(Status.NORMAL);
                       }
                       adminAccountDomainService.save(account).then().log("save otp key info")
                           .subscribe();
                       return account;
-                    }).then().log("findbyId..").subscribe()
+                    }).then().log("findbyId..").subscribe();
+              }
             ).flatMap(Mono::just);
           } else {
             log.debug("OTP check error");
