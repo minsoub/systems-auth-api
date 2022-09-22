@@ -20,6 +20,7 @@ import com.bithumbsystems.auth.core.model.request.AdminRequest;
 import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
@@ -235,9 +236,13 @@ public class AdminAccountService {
           log.debug("generateToken => {}", result);
           result.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail()));
           result.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
-          result.setOtpInfo(
-              otpService.generate(account.getEmail(),
-                  account.getOtpSecretKey()));
+            OtpResponse otpResponse = otpService.generate(account.getEmail(), account.getOtpSecretKey());
+
+          result.setValidData(otpResponse.getEncodeKey());
+//          result.setOtpInfo(
+//              otpService.generate(account.getEmail(),
+//                  account.getOtpSecretKey()));
+
           if (StringUtils.hasLength(account.getOtpSecretKey())) {
               result.setIsCode(true);
           } else {

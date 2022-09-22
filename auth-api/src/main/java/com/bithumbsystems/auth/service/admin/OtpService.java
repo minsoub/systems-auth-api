@@ -53,7 +53,7 @@ public class OtpService {
     // Token Validation check and otp no check
     log.debug("otp validation check start => {}", request);
 
-    String endcodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getEncodeKey());
+    String endcodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getCheckData());
 
     return JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
         .flatMap(result -> {
