@@ -58,7 +58,7 @@ public class OtpService {
     // Token Validation check and otp no check
     log.debug("otp validation check start => {}", request);
 
-    String encodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getEncodeKey());
+    String encodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getCheckData());
 
     return
         checkExpiredOTP(request, encodeKey)

@@ -181,18 +181,6 @@ public class AdminAccountService {
         });
   }
 
-  private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
-    final var period = 3;
-    if (account.getLastPasswordUpdateDate() == null && account.getCreateDate()
-        .isBefore(LocalDateTime.now().minusMonths(period))) {
-      return true;
-    } else if (account.getLastPasswordUpdateDate() == null) {
-      return false;
-    } else {
-      return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
-    }
-  }
-
   /**
    * 사용자 인증 처리 - 1차
    *
@@ -234,23 +222,9 @@ public class AdminAccountService {
           log.debug("generateToken => {}", result);
           result.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail()));
           result.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
-          result.setOtpInfo(
-              otpService.generate(account.getEmail(),
-                  account.getOtpSecretKey()));
           result.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
-            OtpResponse otpResponse = otpService.generate(account.getEmail(), account.getOtpSecretKey());
-
+          OtpResponse otpResponse = otpService.generate(account.getEmail(), account.getOtpSecretKey());
           result.setValidData(otpResponse.getEncodeKey());
-//          result.setOtpInfo(
-//              otpService.generate(account.getEmail(),
-//                  account.getOtpSecretKey()));
-
-          if (StringUtils.hasLength(account.getOtpSecretKey())) {
-              result.setIsCode(true);
-          } else {
-              result.setIsCode(false);
-          }
-          //result.setOptKey(account.getOtpSecretKey());
           if (account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
             result.setStatus(Status.INIT_REQUEST);
           } else {
