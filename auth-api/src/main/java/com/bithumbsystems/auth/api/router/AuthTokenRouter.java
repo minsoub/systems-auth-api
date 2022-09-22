@@ -12,6 +12,7 @@ import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.KeyResponse;
+import com.bithumbsystems.auth.core.model.response.PublicKeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -217,6 +218,27 @@ public class AuthTokenRouter {
                     )
             ),
             @RouterOperation(
+                path = "/api/v1/adm/public-key",
+                produces = {
+                    MediaType.APPLICATION_JSON_VALUE
+                },
+                method = RequestMethod.GET,
+                beanClass = AuthHandler.class,
+                beanMethod = "publicKey",
+                operation = @Operation(
+                    operationId = "publicKey",
+                    responses = {
+                        @ApiResponse(
+                            responseCode = "200",
+                            description = "successful operation",
+                            content = @Content(schema = @Schema(
+                                implementation = PublicKeyResponse.class
+                            ))
+                        )
+                    }
+                )
+            ),
+            @RouterOperation(
                     path = "/api/v1/user/init",
                     produces = {
                             MediaType.APPLICATION_JSON_VALUE
@@ -290,6 +312,27 @@ public class AuthTokenRouter {
                     )
             ),
             @RouterOperation(
+                path = "/api/v1/user/public-key",
+                produces = {
+                    MediaType.APPLICATION_JSON_VALUE
+                },
+                method = RequestMethod.GET,
+                beanClass = AuthHandler.class,
+                beanMethod = "publicKey",
+                operation = @Operation(
+                    operationId = "publicKey",
+                    responses = {
+                        @ApiResponse(
+                            responseCode = "200",
+                            description = "successful operation",
+                            content = @Content(schema = @Schema(
+                                implementation = PublicKeyResponse.class
+                            ))
+                        )
+                    }
+                )
+            ),
+            @RouterOperation(
                     path = "/api/v1/authorize",
                     produces = {
                             MediaType.APPLICATION_JSON_VALUE
@@ -325,11 +368,13 @@ public class AuthTokenRouter {
             .POST("/api/v1/adm/otp", adminAuthHandler::otp)
             .POST("/api/v1/adm/password", adminAuthHandler::passwordUpdate)
             .POST("/api/v1/adm/otp/clear", adminAuthHandler::otpClear)
+            .GET("/api/v1/adm/public-key", authHandler::publicKey)
             .GET("/api/v1/user/init", userAuthHandler::initKey)
             .PUT("/api/v1/user/token", userAuthHandler::refreshToken)
             .POST("/api/v1/user/login", userAuthHandler::userLogin)
             .POST("/api/v1/user/captcha-login", userAuthHandler::userCaptchaLogin)
             .POST("/api/v1/user/join", userAuthHandler::userJoin)
+            .GET("/api/v1/user/public-key", authHandler::publicKey)
             .POST("/api/v1/authorize", authHandler::authorize)
             .build();
     }

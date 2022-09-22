@@ -26,6 +26,8 @@ import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
+import com.bithumbsystems.auth.service.AuthService;
+import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -51,6 +53,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final CaptchaService captchaService;
+  private final RsaCipherService rsaCipherService;
+  private final AuthService authService;
   private static final int PASSWORD_EXPIRE_DAY = 90;    // 비밀번호 만료일
   /**
    * 일반 사용자 로그인 처리 - 1차 로그인
@@ -59,12 +63,13 @@ public class UserService {
    * @return mono mono
    */
   public Mono<TokenResponse> userLogin(Mono<UserRequest> userRequest) {
-    return userRequest.flatMap(request -> authenticateUser(
-            AES256Util.decryptAES(config.getLrcCryptoKey(), request.getEmail())
-            , AES256Util.decryptAES(config.getLrcCryptoKey(), request.getPasswd())
-            , request.getSiteId()
-        )
-    );
+    return authService.getRsaPrivateKey()
+        .flatMap(privateKey -> userRequest.flatMap(request -> authenticateUser(
+                rsaCipherService.decryptRSA(request.getEmail(), privateKey)
+                , rsaCipherService.decryptRSA(request.getPasswd(), privateKey)
+                , request.getSiteId()
+            ))
+        );
   }
 
   /**
@@ -74,19 +79,19 @@ public class UserService {
    * @return mono mono
    */
   public Mono<TokenResponse> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
-    return userCaptchaRequest.flatMap(request -> {
-      return captchaService.doVerify(request.getCaptcha())
-          .flatMap(result -> {
-            if (result) {
-              return authenticateUser(
-                  AES256Util.decryptAES(config.getLrcCryptoKey(), request.getEmail())
-                  , AES256Util.decryptAES(config.getLrcCryptoKey(), request.getPasswd())
-                  , request.getSiteId()
-              ).switchIfEmpty(Mono.error(new UnauthorizedException(AUTHENTICATION_FAIL)));
-            }
-            return Mono.error(new UnauthorizedException(CAPTCHA_FAIL));
-          });
-    });
+    return authService.getRsaPrivateKey()
+        .flatMap(privateKey ->
+            userCaptchaRequest.flatMap(request -> captchaService.doVerify(request.getCaptcha())
+                .flatMap(result -> {
+                  if (result) {
+                    return authenticateUser(
+                        rsaCipherService.decryptRSA(request.getEmail(), privateKey)
+                        , rsaCipherService.decryptRSA(request.getPasswd(), privateKey)
+                        , request.getSiteId()
+                    ).switchIfEmpty(Mono.error(new UnauthorizedException(AUTHENTICATION_FAIL)));
+                  }
+                  return Mono.error(new UnauthorizedException(CAPTCHA_FAIL));
+                })));
   }
 
   /**
