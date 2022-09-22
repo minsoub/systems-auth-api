@@ -28,6 +28,8 @@ import com.bithumbsystems.auth.core.util.message.MessageService;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.service.AuthService;
+import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -43,6 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
 
 /**
  * 관리자/운영자 위한 인증 관련 클래스
@@ -58,6 +61,8 @@ public class AdminAccountService {
   private final PasswordEncoder passwordEncoder;
   private final MessageService messageService;
   private final AwsConfig config;
+  private final RsaCipherService rsaCipherService;
+  private final AuthService authService;
 
   private final JwtProperties jwtProperties;
 
@@ -68,11 +73,11 @@ public class AdminAccountService {
    * @return mono mono
    */
   public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
-    return userRequest.flatMap(request -> authenticate(
-            AES256Util.decryptAES(config.getCryptoKey(), request.getEmail())
-            , AES256Util.decryptAES(config.getCryptoKey(), request.getPasswd())
-        )
-    );
+    return authService.getRsaPrivateKey()
+        .flatMap(privateKey -> userRequest.flatMap(request -> authenticate(
+                rsaCipherService.decryptRSA(request.getEmail(), privateKey)
+                , rsaCipherService.decryptRSA(request.getPasswd(), privateKey)
+            )));
   }
 
   /**

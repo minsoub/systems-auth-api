@@ -7,10 +7,16 @@ import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
+import com.bithumbsystems.auth.data.mongodb.client.service.RsaCipherInfoDomainService;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
+import com.bithumbsystems.auth.data.mongodb.client.entity.RsaCipherInfo;
+import com.bithumbsystems.auth.service.cipher.RsaCipherService;
+import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 /**
@@ -24,6 +30,11 @@ public class AuthService {
   private final JwtProperties jwtProperties;
 
   private final RedisTemplateSample redisTemplate;
+
+  private final RsaCipherInfoDomainService rsaCipherInfoDomainService;
+
+  private final RsaCipherService rsaCipherService;
+  private static String RSA_CIPHER_KEY = "rsa-cipher-key";
 
   /**
    * Authorize
@@ -56,5 +67,28 @@ public class AuthService {
    */
   private Mono<VerificationResult> tokenValidate(TokenValidationRequest tokenValidationRequest) {
     return JwtVerifyUtil.check(tokenValidationRequest.getToken(), jwtProperties.getSecret());
+  }
+
+  @Transactional
+  public Mono<RsaCipherInfo> createRsaCipherCache() {
+    Map<String, String> serverRsaKeys = rsaCipherService.getRsaKeys();
+    log.info("serverRsaKeys : {}", serverRsaKeys);
+
+    return rsaCipherInfoDomainService.save(RsaCipherInfo.builder()
+        .id(RSA_CIPHER_KEY)
+        .serverPrivateKey(serverRsaKeys.get(rsaCipherService.PRIVATE_KEY_NAME))
+        .serverPublicKey(serverRsaKeys.get(rsaCipherService.PUBLIC_KEY_NAME))
+        .createdAt(LocalDateTime.now())
+        .build());
+  }
+
+  public Mono<String> getRsaPublicKey() {
+    return rsaCipherInfoDomainService.findById(RSA_CIPHER_KEY)
+        .map(RsaCipherInfo::getServerPublicKey);
+  }
+
+  public Mono<String> getRsaPrivateKey() {
+    return rsaCipherInfoDomainService.findById(RSA_CIPHER_KEY)
+        .map(RsaCipherInfo::getServerPrivateKey);
   }
 }
