@@ -1,7 +1,10 @@
 package com.bithumbsystems.auth.api.handler;
 
 import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
+import com.bithumbsystems.auth.core.model.response.PublicKeyResponse;
 import com.bithumbsystems.auth.service.AuthService;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,4 +30,17 @@ public class AuthHandler {
     return ServerResponse.ok().body(authService.authorize(tokenRequest), String.class);
   }
 
+  /**
+   * RSA Public Key를 리턴한다.
+   *
+   * @param request
+   * @return
+   */
+  public Mono<ServerResponse> publicKey(ServerRequest request) {
+    return authService.getRsaPublicKey()
+        .map(pubKey -> PublicKeyResponse.builder()
+            .publicKey(Base64.getEncoder().encodeToString(pubKey.getBytes(StandardCharsets.UTF_8)))
+            .build())
+        .flatMap(res -> ServerResponse.ok().bodyValue(res));
+  }
 }

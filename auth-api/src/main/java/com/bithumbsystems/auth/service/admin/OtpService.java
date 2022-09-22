@@ -2,12 +2,14 @@ package com.bithumbsystems.auth.service.admin;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMBER;
 
+import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
+import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
@@ -40,6 +42,7 @@ public class OtpService {
   private final AdminTokenService adminTokenService;
   private final AdminAccountDomainService adminAccountDomainService;
 
+  private final AwsConfig config;
   /**
    * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
    *
@@ -50,12 +53,14 @@ public class OtpService {
     // Token Validation check and otp no check
     log.debug("otp validation check start => {}", request);
 
+    String endcodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getEncodeKey());
+
     return JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
         .flatMap(result -> {
           // success token validation check
           // otp validation check
           log.debug("jwt validation check completed : {}", result);
-          if (otpCheckCode(request.getOtpNo(), request.getEncodeKey())) {
+          if (otpCheckCode(request.getOtpNo(), endcodeKey)) { // request.getEncodeKey())) {
             // 2차 토큰 생성
             log.debug("2차 토큰 생성");
 
@@ -73,7 +78,7 @@ public class OtpService {
                 adminAccountDomainService.findById(result.claims.get("account_id").toString())
                     .publishOn(Schedulers.boundedElastic())
                     .map(account -> {
-                      account.setOtpSecretKey(request.getEncodeKey());
+                      account.setOtpSecretKey(endcodeKey); // request.getEncodeKey());
                       account.setLastLoginDate(LocalDateTime.now());
                       account.setLoginFailCount(0L);
                       if(!needPasswordChange(account)) {
@@ -116,7 +121,7 @@ public class OtpService {
     String[] arrData = email.split("@");
     String url = getQRBarcodeURL(arrData[0], arrData[1], encodedKey);
 
-    OtpResponse res = OtpResponse.builder().encodeKey(encodedKey).url(url).build();
+    OtpResponse res = OtpResponse.builder().encodeKey(AES256Util.encryptAES(config.getCryptoKey(), encodedKey)).url(url).build();
 
     log.debug("OptResponse generate => {}", res);
 

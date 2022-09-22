@@ -45,6 +45,9 @@ public class AwsProperties {
   @Value("${cloud.aws.param-store.lrc-name}")
   private String paramStoreLrcName;
 
+  @Value("${cloud.aws.param-store.cpc-name}")
+  private String paramStoreCpcName;
+
   @Value("${cloud.aws.param-store.message-name}")
   private String paramStoreMessageName;
   @Value("${cloud.aws.param-store.auth-name}")

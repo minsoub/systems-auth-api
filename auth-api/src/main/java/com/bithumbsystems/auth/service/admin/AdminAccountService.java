@@ -9,6 +9,7 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PA
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
@@ -21,21 +22,29 @@ import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
+import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.core.util.message.MessageService;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.service.AuthService;
+import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
 
 /**
  * 관리자/운영자 위한 인증 관련 클래스
@@ -51,6 +60,10 @@ public class AdminAccountService {
   private final PasswordEncoder passwordEncoder;
   private final MessageService messageService;
   private final AwsConfig config;
+  private final RsaCipherService rsaCipherService;
+  private final AuthService authService;
+
+  private final JwtProperties jwtProperties;
 
   /**
    * 사용자 1차 로그인
@@ -59,11 +72,11 @@ public class AdminAccountService {
    * @return mono mono
    */
   public Mono<TokenOtpInfo> login(Mono<UserRequest> userRequest) {
-    return userRequest.flatMap(request -> authenticate(
-            AES256Util.decryptAES(config.getCryptoKey(), request.getEmail())
-            , AES256Util.decryptAES(config.getCryptoKey(), request.getPasswd())
-        )
-    );
+    return authService.getRsaPrivateKey()
+        .flatMap(privateKey -> userRequest.flatMap(request -> authenticate(
+                rsaCipherService.decryptRSA(request.getEmail(), privateKey)
+                , rsaCipherService.decryptRSA(request.getPasswd(), privateKey)
+            )));
   }
 
   /**
@@ -96,9 +109,30 @@ public class AdminAccountService {
    * @param otpClearRequestMono the otp clear request mono
    * @return mono
    */
-  public Mono<AdminAccount> otpClear(Mono<OtpClearRequest> otpClearRequestMono) {
+  public Mono<SingleResponse> otpClear(Mono<OtpClearRequest> otpClearRequestMono) {
     return otpClearRequestMono.flatMap(
-        request -> adminAccountDomainService.findByEmail(AES256Util.decryptAES(config.getCryptoKey(), request.getEmail()))
+            request -> {
+                // 1차 토큰 로직 추가.
+                Claims check = JwtVerifyUtil.getAllClaimsFromToken(request.getToken(), jwtProperties.getSecret());
+                if (check == null) {
+                    return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                }
+                String checkEmail = check.getIssuer();
+                if (checkEmail == null) {
+                    return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                } else {
+                    // 메일 주소 체크.
+                    String ch1 = AES256Util.decryptAES(config.getCryptoKey(), request.getEmail());
+                    log.debug(checkEmail);
+                    String ch2 =  checkEmail; // AES256Util.decryptAES(config.getKmsKey(), checkEmail);
+                    log.debug("ch1 => {}", ch1);
+                    log.debug("ch2 => {}", ch2);
+                    if (!ch1.equals(ch2)) {
+                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                    }
+                }
+
+        return adminAccountDomainService.findByEmail(AES256Util.decryptAES(config.getCryptoKey(), request.getEmail()))
             .flatMap(result -> {
               result.setStatus(Status.INIT_OTP_REQUEST);
               return adminAccountDomainService.save(result)
@@ -107,7 +141,8 @@ public class AdminAccountService {
                     adminAccount.setId("");
                     return Mono.just(adminAccount);
                   });
-            }));
+            });
+            }).map(result -> new SingleResponse<>("OK", ResultCode.SUCCESS));
   }
 
 
@@ -192,7 +227,7 @@ public class AdminAccountService {
             return wrongPasswordProcess(account);
           }
         })
-        .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
+        .switchIfEmpty(Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE)));
   }
 
   private Mono<TokenOtpInfo> loginSuccess(AdminAccount account) {
@@ -208,7 +243,12 @@ public class AdminAccountService {
           result.setOtpInfo(
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));
-          result.setOptKey(account.getOtpSecretKey());
+          if (StringUtils.hasLength(account.getOtpSecretKey())) {
+              result.setIsCode(true);
+          } else {
+              result.setIsCode(false);
+          }
+          //result.setOptKey(account.getOtpSecretKey());
           if (account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
             result.setStatus(Status.INIT_REQUEST);
           } else {
@@ -218,6 +258,11 @@ public class AdminAccountService {
         });
   }
 
+    /**
+     * 패스워드 오류 시 실패에 대한 저장.
+     * @param account
+     * @return
+     */
   private Mono<TokenOtpInfo> wrongPasswordProcess(AdminAccount account) {
     account.setLoginFailCount(
         account.getLoginFailCount() == null ? 1 : account.getLoginFailCount() + 1);
@@ -228,14 +273,14 @@ public class AdminAccountService {
     return adminAccountDomainService.save(account)
         .flatMap(result -> {
           if (account.getLoginFailCount() >= 5) {
-            return Mono.error(new UnauthorizedException(INVALID_ACCOUNT_CLOSED));
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           } else {
-            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
         });
   }
 
-  public Mono<AdminAccount> sendTempPasswordMail(Mono<AdminRequest> adminRequestMono) {
+  public Mono<SingleResponse> sendTempPasswordMail(Mono<AdminRequest> adminRequestMono) {
     return adminRequestMono
         .flatMap(adminRequest -> {
           log.debug(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
@@ -253,7 +298,8 @@ public class AdminAccountService {
           account.setLastPasswordUpdateDate(null);
           account.setUpdateDate(LocalDateTime.now());
           account.setUpdateAdminAccountId(account.getId());
-          return adminAccountDomainService.save(account);
+          return adminAccountDomainService.save(account)
+                  .map(result -> new SingleResponse<>("OK", ResultCode.SUCCESS));
         });
   }
 

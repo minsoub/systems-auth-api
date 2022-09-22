@@ -133,7 +133,7 @@ public class AdminAuthHandler {
   public Mono<ServerResponse> otpClear(ServerRequest request) {
     Mono<OtpClearRequest> otpClearRequestMono = request.bodyToMono(OtpClearRequest.class);
 
-    return ServerResponse.ok().body(adminAccountService.otpClear(otpClearRequestMono), AdminAccount.class);
+    return ServerResponse.ok().body(adminAccountService.otpClear(otpClearRequestMono), SingleResponse.class);
   }
 
   /**
@@ -145,6 +145,6 @@ public class AdminAuthHandler {
   public Mono<ServerResponse> sendTempPasswordMail(ServerRequest request) {
     Mono<AdminRequest> adminRequestMono = request.bodyToMono(AdminRequest.class);
 
-    return ServerResponse.ok().body(adminAccountService.sendTempPasswordMail(adminRequestMono), AdminAccount.class);
+    return ServerResponse.ok().body(adminAccountService.sendTempPasswordMail(adminRequestMono), SingleResponse.class);
   }
 }
