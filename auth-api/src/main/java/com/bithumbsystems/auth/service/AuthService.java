@@ -7,9 +7,9 @@ import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
-import com.bithumbsystems.auth.data.mongodb.client.service.RsaCipherInfoDomainService;
-import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 import com.bithumbsystems.auth.data.mongodb.client.entity.RsaCipherInfo;
+import com.bithumbsystems.auth.data.mongodb.client.service.RsaCipherInfoDomainService;
+import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class AuthService {
 
   private final JwtProperties jwtProperties;
 
-  private final RedisTemplateSample redisTemplate;
+  private final AuthRedisService authRedisService;
 
   private final RsaCipherInfoDomainService rsaCipherInfoDomainService;
 
@@ -50,7 +50,7 @@ public class AuthService {
           if (verificationResult.claims.get("ROLE").equals("USER")) {
             key += "::LRC";
           }
-          return redisTemplate.getToken(key)
+          return authRedisService.getToken(key)
               .filter(token -> token.equals(verificationResult.token))
               .map(token -> {
                 log.debug("authorize : {}", token);

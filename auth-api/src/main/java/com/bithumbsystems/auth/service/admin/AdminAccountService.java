@@ -2,11 +2,11 @@ package com.bithumbsystems.auth.service.admin;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_CURRENT_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_OLD_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_ACCOUNT_CLOSED;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.service.admin.validator.AdminAccountValidator.checkPasswordUpdatePeriod;
+import static com.bithumbsystems.auth.service.admin.validator.AdminAccountValidator.isValidPassword;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
@@ -29,14 +29,10 @@ import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
+import io.jsonwebtoken.Claims;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,7 +40,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.function.Tuple2;
 
 /**
  * 관리자/운영자 위한 인증 관련 클래스
@@ -122,12 +117,10 @@ public class AdminAccountService {
                     return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
                 } else {
                     // 메일 주소 체크.
-                    String ch1 = AES256Util.decryptAES(config.getCryptoKey(), request.getEmail());
-                    log.debug(checkEmail);
-                    String ch2 =  checkEmail; // AES256Util.decryptAES(config.getKmsKey(), checkEmail);
-                    log.debug("ch1 => {}", ch1);
-                    log.debug("ch2 => {}", ch2);
-                    if (!ch1.equals(ch2)) {
+                    String decryptEmail = AES256Util.decryptAES(config.getCryptoKey(), request.getEmail());
+                    log.debug("decryptEmail => {}", decryptEmail);
+                    log.debug("checkEmail => {}", checkEmail);
+                    if (!decryptEmail.equals(checkEmail)) {
                         return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
                     }
                 }
@@ -187,17 +180,7 @@ public class AdminAccountService {
         });
   }
 
-  private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
-    final var period = 3;
-    if (account.getLastPasswordUpdateDate() == null && account.getCreateDate()
-        .isBefore(LocalDateTime.now().minusMonths(period))) {
-      return true;
-    } else if (account.getLastPasswordUpdateDate() == null) {
-      return false;
-    } else {
-      return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
-    }
-  }
+
 
   /**
    * 사용자 인증 처리 - 1차
@@ -243,12 +226,7 @@ public class AdminAccountService {
           result.setOtpInfo(
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));
-          if (StringUtils.hasLength(account.getOtpSecretKey())) {
-              result.setIsCode(true);
-          } else {
-              result.setIsCode(false);
-          }
-          //result.setOptKey(account.getOtpSecretKey());
+          result.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
           if (account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
             result.setStatus(Status.INIT_REQUEST);
           } else {
@@ -271,13 +249,7 @@ public class AdminAccountService {
     }
 
     return adminAccountDomainService.save(account)
-        .flatMap(result -> {
-          if (account.getLoginFailCount() >= 5) {
-            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
-          } else {
-            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
-          }
-        });
+        .flatMap(result -> Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE)));
   }
 
   public Mono<SingleResponse> sendTempPasswordMail(Mono<AdminRequest> adminRequestMono) {
@@ -307,12 +279,5 @@ public class AdminAccountService {
     return String.valueOf(System.currentTimeMillis()).substring(0, 3)
         + UUID.randomUUID().toString().replace("-", "").substring(0, 5)
         + String.valueOf(System.currentTimeMillis()).substring(3, 6);
-  }
-
-  private static boolean isValidPassword(String password) {
-    var regex = "^.*(?=^.{8,64}$)(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[~!@#$%^*]).*$";
-    Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(password);
-    return matcher.matches();
   }
 }

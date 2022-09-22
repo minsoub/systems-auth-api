@@ -10,7 +10,7 @@ import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
-import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
+import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.TokenService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono;
 public class UserTokenService implements TokenService {
 
   private final JwtProperties jwtProperties;
-  private final RedisTemplateSample redisTemplateSample;
+  private final AuthRedisService authRedisService;
 
   /**
    * refresh 토큰으로 갱신
@@ -37,7 +37,8 @@ public class UserTokenService implements TokenService {
       log.debug("reGenerateToken data => {}", authRequest);
 
       return JwtVerifyUtil.check(tokenInfo.getRefreshToken(), jwtProperties.getSecret())
-          .flatMap(verificationResult -> redisTemplateSample.getToken((String) verificationResult.claims.get("iss") + "::LRC")
+          .flatMap(verificationResult -> authRedisService.getToken(
+                  verificationResult.claims.get("iss") + "::LRC")
               .filter(token -> token.equals(tokenInfo.getAccessToken()))
               .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)))
               .then(generateToken(TokenGenerateRequest.builder()
@@ -79,7 +80,7 @@ public class UserTokenService implements TokenService {
         .build();
 
     log.debug("tokenResponse info => {}", tokenResponse);
-    return redisTemplateSample.saveToken(request.getEmail() + "::LRC", tokenInfo.getAccessToken())
+    return authRedisService.saveToken(request.getEmail() + "::LRC", tokenInfo.getAccessToken())
         .map(result -> tokenResponse);
   }
 }
