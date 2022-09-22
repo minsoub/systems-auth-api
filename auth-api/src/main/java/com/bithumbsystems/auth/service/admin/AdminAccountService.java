@@ -20,6 +20,7 @@ import com.bithumbsystems.auth.core.model.request.AdminRequest;
 import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
@@ -180,7 +181,17 @@ public class AdminAccountService {
         });
   }
 
-
+  private static boolean checkPasswordUpdatePeriod(AdminAccount account) {
+    final var period = 3;
+    if (account.getLastPasswordUpdateDate() == null && account.getCreateDate()
+        .isBefore(LocalDateTime.now().minusMonths(period))) {
+      return true;
+    } else if (account.getLastPasswordUpdateDate() == null) {
+      return false;
+    } else {
+      return account.getLastPasswordUpdateDate().isBefore(LocalDateTime.now().minusMonths(period));
+    }
+  }
 
   /**
    * 사용자 인증 처리 - 1차
@@ -227,6 +238,19 @@ public class AdminAccountService {
               otpService.generate(account.getEmail(),
                   account.getOtpSecretKey()));
           result.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
+            OtpResponse otpResponse = otpService.generate(account.getEmail(), account.getOtpSecretKey());
+
+          result.setValidData(otpResponse.getEncodeKey());
+//          result.setOtpInfo(
+//              otpService.generate(account.getEmail(),
+//                  account.getOtpSecretKey()));
+
+          if (StringUtils.hasLength(account.getOtpSecretKey())) {
+              result.setIsCode(true);
+          } else {
+              result.setIsCode(false);
+          }
+          //result.setOptKey(account.getOtpSecretKey());
           if (account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
             result.setStatus(Status.INIT_REQUEST);
           } else {

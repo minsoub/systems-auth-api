@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class OtpRequest {
     String otpNo;
     String name;
-    String encodeKey;
+    String checkData;
     String siteId;
     String token;
     Status status;
