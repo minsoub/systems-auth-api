@@ -10,6 +10,7 @@ public enum ErrorCode {
   INVALID_HEADER_SITE_ID("Header 정보가 유효하지 않습니다!!(Not found site_id)"),
   EXPIRED_TOKEN("Token expired"),
   INVALID_TOKEN("Invalid token"),
+  TOKEN_EXISTS("Token is existed"),
 
   USER_ACCOUNT_DISABLE("Account disabled"),
   USER_ACCOUNT_EXPIRED("Account expired"),

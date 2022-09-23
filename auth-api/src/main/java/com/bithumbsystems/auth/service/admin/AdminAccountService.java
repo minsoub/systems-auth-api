@@ -1,25 +1,19 @@
 package com.bithumbsystems.auth.service.admin;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_CURRENT_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EQUAL_OLD_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_USER_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 import static com.bithumbsystems.auth.service.admin.validator.AdminAccountValidator.checkPasswordUpdatePeriod;
 import static com.bithumbsystems.auth.service.admin.validator.AdminAccountValidator.isValidPassword;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.MailForm;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
-import com.bithumbsystems.auth.core.model.request.AdminRequest;
-import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
@@ -28,12 +22,18 @@ import com.bithumbsystems.auth.core.util.message.MessageService;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import io.jsonwebtoken.Claims;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -61,6 +61,8 @@ public class AdminAccountService {
 
   private final JwtProperties jwtProperties;
 
+    private final AuthRedisService authRedisService;
+
   /**
    * 사용자 1차 로그인
    *
@@ -85,6 +87,7 @@ public class AdminAccountService {
     return userRequest.flatMap(request -> passwordUpdate(
             AES256Util.decryptAES(config.getCryptoKey(), request.getEmail())
             , AES256Util.decryptAES(config.getCryptoKey(), request.getPasswd())
+            , AES256Util.decryptAES(config.getCryptoKey(), request.getCurrentPasswd())
         ).map(result -> new SingleResponse<>("OK", ResultCode.SUCCESS))
     );
   }
@@ -158,18 +161,22 @@ public class AdminAccountService {
    * @param password the password
    * @return mono
    */
-  public Mono<AdminAccount> passwordUpdate(String email, String password) {
+  public Mono<AdminAccount> passwordUpdate(String email, String password, String currentPassword) {
     return findByEmail(email)
         .flatMap(account -> {
           if(!isValidPassword(password)) {
-            return Mono.error(new UnauthorizedException(INVALID_USER_PASSWORD));
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+          }
+          if (!passwordEncoder.matches(currentPassword, account.getPassword())) {
+              log.debug("current password not equals {}", currentPassword);
+              return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
           if (checkPasswordUpdatePeriod(account) && passwordEncoder.matches(password,
               account.getOldPassword())) {
-            return Mono.error(new UnauthorizedException(EQUAL_OLD_PASSWORD));
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
           if (passwordEncoder.matches(password, account.getPassword())) {
-            return Mono.error(new UnauthorizedException(EQUAL_CURRENT_PASSWORD));
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
           }
           account.setOldPassword(account.getPassword());
           account.setPassword(passwordEncoder.encode(password));
@@ -250,11 +257,64 @@ public class AdminAccountService {
         .flatMap(result -> Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE)));
   }
 
-  public Mono<SingleResponse> sendTempPasswordMail(Mono<AdminRequest> adminRequestMono) {
+    /**
+     * 임시 비밀번호 요청 검증을 위한 CONFIRM 메일을 전송한다.
+     *
+     * @param adminRequestMono
+     * @return
+     */
+    public Mono<SingleResponse> sendTempPasswordInit(Mono<AdminRequest> adminRequestMono) {
+        return adminRequestMono
+                .flatMap(adminRequest -> {
+                    log.debug(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
+                    return findByEmail(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
+                })
+                .flatMap(account -> {
+                    // 임시 빌밀번호가 발급 가능한 계정상태이진 체크한다.
+                    if (account.getStatus().equals(Status.CLOSED_ACCOUNT) || account.getStatus().equals(Status.DENY_ACCESS)) {
+                        return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                    }
+
+                    return makeConfirmUrl(account.getEmail())
+                            .flatMap(result -> {
+                                log.debug(result);
+                               messageService.sendInitMail(account.getEmail(), result, MailForm.CONFIRM);
+                               return Mono.just(new SingleResponse<>("OK", ResultCode.SUCCESS));
+                            });
+                });
+    }
+
+    /**
+     * 임시 비밀번호를 발송한다.
+     *
+     * @param adminRequestMono
+     * @return
+     */
+  public Mono<SingleResponse> sendTempPasswordMail(Mono<AdminTempRequest> adminRequestMono) {
     return adminRequestMono
         .flatMap(adminRequest -> {
-          log.debug(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
-          return findByEmail(AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail()));
+
+            log.debug("validData => {}", adminRequest.getValidData());
+            if (!StringUtils.hasLength(adminRequest.getValidData())) {
+                log.debug("token check error...");
+                return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+            }
+
+            // Token Validation Check
+            String email = AES256Util.decryptAES(config.getCryptoKey(), adminRequest.getEmail());
+            // Token 분석
+            return JwtVerifyUtil.check(adminRequest.getValidData(), jwtProperties.getSecret())
+                    .flatMap(validResult -> {
+                        String validEmail = AES256Util.decryptAES(config.getCryptoKey(), validResult.claims.getIssuer());
+                        if (!email.equals(validEmail)) {
+                            log.debug("email validation check error");
+                            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+                        }
+                        return Mono.just(true);
+                    })
+                    .flatMap(r -> {
+                        return findByEmail(email);
+                    });
         })
         .flatMap(account -> {
           if (account.getStatus().equals(Status.CLOSED_ACCOUNT) || account.getStatus().equals(Status.DENY_ACCESS)) {
@@ -277,5 +337,52 @@ public class AdminAccountService {
     return String.valueOf(System.currentTimeMillis()).substring(0, 3)
         + UUID.randomUUID().toString().replace("-", "").substring(0, 5)
         + String.valueOf(System.currentTimeMillis()).substring(3, 6);
+  }
+
+    /**
+     * Confirm URL 생성
+     *
+     * @param email
+     * @return
+     */
+  private Mono<String> makeConfirmUrl(String email) {
+      // 5분 만료 토큰 생성
+      GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
+              .builder()
+              .secret(jwtProperties.getSecret())
+              .expiration(jwtProperties.getAccessExpiration())
+              .subject("User Identification")
+              .issuer(AES256Util.encryptAES(config.getCryptoKey(), email))
+              .claims(Map.of("account_id", AES256Util.encryptAES(config.getCryptoKey(), email)))  // 지금은 인증
+              .build();
+
+      // Token 생성.
+      var createdDate = new Date();
+      var expirationTimeInMilliseconds = 60 * 5 * 1000;  // 5 minute
+      var refreshExpirationDate =  new Date(System.currentTimeMillis() + expirationTimeInMilliseconds);
+      var token = Jwts.builder()
+              .setClaims(generateTokenInfo.getClaims())
+              .setIssuer(generateTokenInfo.getIssuer())
+              .setSubject(generateTokenInfo.getSubject())
+              .setIssuedAt(createdDate)
+              .setId(UUID.randomUUID().toString())
+              .setExpiration(refreshExpirationDate)
+              .signWith(Keys.hmacShaKeyFor(generateTokenInfo.getSecret().getBytes()))
+              .compact();
+
+      // token을 저장하고 만료일을 5분으로 설정한다.
+      // key 구분자는 email_confirm으로 한다.
+      // 이미 등록되어 있으면 안된다.
+      String redisKey = email+"_confirm";
+
+      return authRedisService.getCheckKey(redisKey)
+              .flatMap(r -> {
+                  if (!r) {
+                      return authRedisService.saveExpiration(token, redisKey, expirationTimeInMilliseconds/1000)
+                              .flatMap(r2 -> Mono.just(token));
+                  }else {
+                      return Mono.error(new UnauthorizedException(TOKEN_EXISTS));
+                  }
+              });
   }
 }

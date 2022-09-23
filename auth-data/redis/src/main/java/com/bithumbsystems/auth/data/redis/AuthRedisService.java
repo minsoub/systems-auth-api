@@ -37,6 +37,18 @@ public class AuthRedisService{
   }
 
   /**
+   * key가 존재하는지 체크한다.
+   *
+   * @param key
+   * @return
+   */
+  public Mono<Boolean> getCheckKey(String key) {
+    return getValue(key)
+            .flatMap(r -> Mono.just(true))
+            .switchIfEmpty(Mono.just(false));
+  }
+
+  /**
    * key를 통해서 토큰 정보를 삭제한다.
    *
    * @param userId the user id
@@ -65,7 +77,7 @@ public class AuthRedisService{
    * @param expireSecond the expire second
    * @return the mono
    */
-  private Mono<Boolean> saveExpiration(String otpNo, String encodeKey, int expireSecond ) {
+  public Mono<Boolean> saveExpiration(String otpNo, String encodeKey, int expireSecond ) {
     return redisTemplate.opsForValue().set(encodeKey, otpNo, Duration.ofSeconds(expireSecond));
   }
 

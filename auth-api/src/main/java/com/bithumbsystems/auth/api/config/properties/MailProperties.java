@@ -12,4 +12,5 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesBindin
 public class MailProperties {
     private String logoUrl;
     private String loginUrl;
+    private String confirmUrl;
 }

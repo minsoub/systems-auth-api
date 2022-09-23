@@ -113,6 +113,32 @@ public class AuthTokenRouter {
                             )
                     )
         ),
+            @RouterOperation(
+                    path = "/api/v1/adm/temp-password-init",
+                    produces = {
+                            MediaType.APPLICATION_JSON_VALUE
+                    },
+                    method = RequestMethod.POST,
+                    beanClass = AdminAuthHandler.class,
+                    beanMethod = "sendTempPasswordInit",
+                    operation = @Operation(
+                            operationId = "sendTempPasswordInit",
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "successful operation",
+                                            content = @Content(schema = @Schema(
+                                                    implementation = String.class
+                                            ))
+                                    )
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(schema = @Schema(
+                                            implementation = String.class
+                                    ))
+                            )
+                    )
+            ),
         @RouterOperation(
             path = "/api/v1/adm/temp-password",
             produces = {
@@ -364,6 +390,7 @@ public class AuthTokenRouter {
             .GET("/api/v1/adm/init", adminAuthHandler::initKey)
             .PUT("/api/v1/adm/token", adminAuthHandler::refreshToken)
             .POST("/api/v1/adm/login", adminAuthHandler::login)
+            .POST("/api/v1/adm/temp-password-init", adminAuthHandler::sendTempPasswordInit)
             .POST("/api/v1/adm/temp-password", adminAuthHandler::sendTempPasswordMail)
             .POST("/api/v1/adm/otp", adminAuthHandler::otp)
             .POST("/api/v1/adm/password", adminAuthHandler::passwordUpdate)
