@@ -67,7 +67,7 @@ public class MailService implements MessageService {
     try {
       String html = FileUtil.readResourceFile(mailForm.getPath());
       log.info("send mail: " + html);
-      String replaceData = "<a href='"+mailProperties.getLoginUrl()+"confirm-password/"+confirmUrl+"'>[Confirm]</a>";
+      String replaceData = "<a href='"+mailProperties.getLoginUrl()+"/confirm-password/"+confirmUrl+"'>[Confirm]</a>";
 
       html = html.replace("[CONFIRM]", replaceData);
       html = html.replace("[LOGOURL]", mailProperties.getLogoUrl());
