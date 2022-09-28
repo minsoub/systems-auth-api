@@ -20,7 +20,8 @@ public class TokenOtpInfo {
     private String token;
     private Date issuedAt;
     private Date expiresAt;
-    private OtpResponse otpInfo;
+    //private OtpResponse otpInfo;
+    private String validData;
     private String id;
     private Boolean isCode;
     private Status status;

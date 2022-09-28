@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfigurati
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.context.ApplicationPidFileWriter;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 @SpringBootApplication(exclude = {
     MongoAutoConfiguration.class,
@@ -18,6 +19,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
     EmbeddedMongoAutoConfiguration.class
 })
 @ConfigurationPropertiesScan
+@EnableRedisRepositories
 @OpenAPIDefinition(info = @Info(title = "Auth API", version = "1.0", description = "Auth APIs v1.0"))
 public class AuthAPIApplication {
 

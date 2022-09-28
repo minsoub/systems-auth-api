@@ -6,10 +6,7 @@ import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
-import com.bithumbsystems.auth.core.model.request.AdminRequest;
-import com.bithumbsystems.auth.core.model.request.OtpClearRequest;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.KeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
@@ -135,15 +132,27 @@ public class AdminAuthHandler {
 
     return ServerResponse.ok().body(adminAccountService.otpClear(otpClearRequestMono), SingleResponse.class);
   }
-
   /**
    * Send temp password mail mono.
+   * 임시 패스워드 요청으로 인한 Confirm 메일을 전송한다.
+   *
+   * @param request the request
+   * @return the mono
+   */
+  public Mono<ServerResponse> sendTempPasswordInit(ServerRequest request) {
+    Mono<AdminRequest> adminRequestMono = request.bodyToMono(AdminRequest.class);
+
+    return ServerResponse.ok().body(adminAccountService.sendTempPasswordInit(adminRequestMono), SingleResponse.class);
+  }
+  /**
+   * Send temp password mail mono.
+   * 임시 패스워드 요청으로 인한 Confirm 메일을 전송한다.
    *
    * @param request the request
    * @return the mono
    */
   public Mono<ServerResponse> sendTempPasswordMail(ServerRequest request) {
-    Mono<AdminRequest> adminRequestMono = request.bodyToMono(AdminRequest.class);
+    Mono<AdminTempRequest> adminRequestMono = request.bodyToMono(AdminTempRequest.class);
 
     return ServerResponse.ok().body(adminAccountService.sendTempPasswordMail(adminRequestMono), SingleResponse.class);
   }

@@ -62,7 +62,27 @@ public class MailService implements MessageService {
       throw new MailException(ErrorCode.FAIL_SEND_MAIL);
     }
   }
+  @Override
+  public void sendInitMail(String emailAddress, String confirmUrl, MailForm mailForm) {
+    try {
+      String html = FileUtil.readResourceFile(mailForm.getPath());
+      log.info("send mail: " + html);
+      String replaceData = "<a href='"+mailProperties.getLoginUrl()+"/confirm-password/"+confirmUrl+"'>[Confirm]</a>";
 
+      html = html.replace("[CONFIRM]", replaceData);
+      html = html.replace("[LOGOURL]", mailProperties.getLogoUrl());
+      html = html.replace("[LOGINURL]", mailProperties.getLoginUrl());
+      send(
+              MailSenderInfo.builder()
+                      .bodyHTML(html)
+                      .subject(mailForm.getSubject())
+                      .emailAddress(emailAddress)
+                      .build()
+      );
+    } catch (MessagingException | IOException e) {
+      throw new MailException(ErrorCode.FAIL_SEND_MAIL);
+    }
+  }
 
   @Override
   public void send(MailSenderInfo mailSenderInfo) throws MessagingException, IOException {
