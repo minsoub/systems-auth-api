@@ -1,42 +1,37 @@
 package com.bithumbsystems.auth.service.user;
 
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHENTICATION_FAIL;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.CAPTCHA_FAIL;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXISTED_USER;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.EXPIRED_PASSWORD;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.LOGIN_USER_NOT_MATCHED;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTHENTICATION_FAIL;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.MAXIMUM_AUTH_ATTEMPTS_EXCEEDED;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_EMAIL_VALID;
-
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
+import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
-import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
+import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
 import com.bithumbsystems.auth.service.AuthService;
+import com.bithumbsystems.auth.service.admin.OtpService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 
 /**
  * The type User service.
@@ -49,7 +44,7 @@ public class UserService {
   private final UserAccountDomainService userAccountDomainService;
   private final UserTokenService userTokenService;
   private final AwsConfig config;
-
+  private final OtpService otpService;
   private final PasswordEncoder passwordEncoder;
 
   private final CaptchaService captchaService;
@@ -62,7 +57,7 @@ public class UserService {
    * @param userRequest the user request
    * @return mono mono
    */
-  public Mono<TokenResponse> userLogin(Mono<UserRequest> userRequest) {
+  public Mono<TokenOtpInfo> userLogin(Mono<UserRequest> userRequest) {
     return authService.getRsaPrivateKey()
         .flatMap(privateKey -> userRequest.flatMap(request -> authenticateUser(
                 rsaCipherService.decryptRSA(request.getEmail(), privateKey)
@@ -78,7 +73,7 @@ public class UserService {
    * @param userCaptchaRequest the user captcha request
    * @return mono mono
    */
-  public Mono<TokenResponse> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
+  public Mono<TokenOtpInfo> userCaptchaLogin(Mono<UserCaptchaRequest> userCaptchaRequest) {
     return authService.getRsaPrivateKey()
         .flatMap(privateKey ->
             userCaptchaRequest.flatMap(request -> captchaService.doVerify(request.getCaptcha())
@@ -157,9 +152,13 @@ public class UserService {
    * @param siteId
    * @return
    */
-  private Mono<TokenResponse> authenticateUser(String email, String password, String siteId) {
-    return userAccountDomainService.findByEmail(
-            AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey()))
+  private Mono<TokenOtpInfo> authenticateUser(String email, String password, String siteId) {
+      log.debug("email:{}", email);
+      log.debug("getKmsKey():{}", config.getKmsKey());
+      log.debug("getSaltKey():{}", config.getSaltKey());
+      log.debug("getIvKey():{}", config.getIvKey());
+      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey());
+    return userAccountDomainService.findByEmail(encryptEmail)
         .flatMap(account -> {
           log.debug("result account data => {}", account);
           if (account.getStatus().equals(UserStatus.EMAIL_VALID)) {
@@ -212,7 +211,32 @@ public class UserService {
                   return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
               }
           }
-
+            return userTokenService.generateTokenOne(account, TokenType.ACCESS).flatMap(tokenOtpInfo -> {
+                log.debug("authenticateUser-generateToken => {}", tokenOtpInfo);
+                tokenOtpInfo.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail()));
+                if(StringUtils.hasLength(account.getName())){
+                    tokenOtpInfo.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
+                }else{
+                    tokenOtpInfo.setName("");
+                }
+                tokenOtpInfo.setOtpInfo(
+                        otpService.generate(AES256Util.decryptAES(config.getKmsKey(), account.getEmail()),
+                                account.getOtpSecretKey()));
+                if (StringUtils.hasLength(account.getOtpSecretKey())) {
+                    tokenOtpInfo.setIsCode(true);
+                } else {
+                    tokenOtpInfo.setIsCode(false);
+                }
+                if(account.getStatus() == null || StringUtils.hasLength(account.getStatus().name()) == false){
+                    return Mono.error(new UnauthorizedException(LOGIN_USER_NOT_MATCHED));
+                }
+                String status = account.getStatus().name();
+                if((Status.NORMAL).equals(status)){
+                    tokenOtpInfo.setStatus(Status.NORMAL);
+                }
+                return Mono.just(tokenOtpInfo);
+            });
+/*
           return userTokenService.generateToken(TokenGenerateRequest.builder()
               .accountId(account.getId())
               .roles("USER")
@@ -231,6 +255,8 @@ public class UserService {
                   result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()))); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
                 return result;
               });
+
+ */
         })
         .switchIfEmpty(Mono.error(new UnauthorizedException(LOGIN_USER_NOT_MATCHED)));
   }

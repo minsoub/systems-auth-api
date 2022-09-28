@@ -1,22 +1,28 @@
 package com.bithumbsystems.auth.service.user;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
-
+import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.GenerateTokenInfo;
+import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
+import com.bithumbsystems.auth.core.model.enums.TokenType;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
+import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
 import com.bithumbsystems.auth.data.redis.RedisTemplateSample;
 import com.bithumbsystems.auth.service.TokenService;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
+
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_TOKEN;
+import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 
 @Slf4j
 @Service
@@ -82,4 +88,29 @@ public class UserTokenService implements TokenService {
     return redisTemplateSample.saveToken(request.getEmail() + "::LRC", tokenInfo.getAccessToken())
         .map(result -> tokenResponse);
   }
+
+  /**
+   * 1차 토큰 생성
+   *
+   * @param account   the account
+   * @param tokenType the token type
+   * @return mono mono
+   */
+  public Mono<TokenOtpInfo> generateTokenOne(UserAccount account, TokenType tokenType) {
+    log.debug("generateTokenOne create......{} {}", account.getId(), tokenType);
+      GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
+              .builder()
+              .secret(jwtProperties.getSecret())
+              .expiration(jwtProperties.getAccessExpiration())
+              .subject(SecurityConstant.LRC_SITE_ID)
+              .issuer(account.getEmail())
+              .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
+              .build();
+
+      TokenOtpInfo tokenInfo = generateOtp(generateTokenInfo);
+      tokenInfo.toBuilder().siteId(SecurityConstant.LRC_SITE_ID).build();
+      return redisTemplateSample.saveToken(account.getEmail() + "::LRC", tokenInfo.toString())
+              .map(result -> tokenInfo);
+  }
+
 }
