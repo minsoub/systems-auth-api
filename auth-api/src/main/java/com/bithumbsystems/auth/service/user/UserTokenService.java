@@ -88,7 +88,6 @@ public class UserTokenService implements TokenService {
     return authRedisService.saveToken(request.getEmail() + "::LRC", tokenInfo.getAccessToken())
             .map(result -> tokenResponse);
   }
-}
 
   /**
    * 1차 토큰 생성
@@ -113,3 +112,5 @@ public class UserTokenService implements TokenService {
     return authRedisService.saveToken(account.getEmail() + "::LRC", tokenInfo.toString())
             .map(result -> tokenInfo);
   }
+}
+
