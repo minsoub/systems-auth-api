@@ -11,6 +11,7 @@ import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
+import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
@@ -211,25 +212,18 @@ public class UserService {
                   return Mono.error(new UnauthorizedException(EXPIRED_PASSWORD));
               }
           }
-            return userTokenService.generateTokenOne(account, TokenType.ACCESS).flatMap(tokenOtpInfo -> {
+            String decryptEmail = AES256Util.decryptAES(config.getKmsKey(), account.getEmail());
+            return userTokenService.generateTokenOne(account, decryptEmail, TokenType.ACCESS).flatMap(tokenOtpInfo -> {
                 log.debug("authenticateUser-generateToken => {}", tokenOtpInfo);
-                tokenOtpInfo.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail()));
+                tokenOtpInfo.setEmail(decryptEmail);
                 if(StringUtils.hasLength(account.getName())){
                     tokenOtpInfo.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
                 }else{
                     tokenOtpInfo.setName("");
                 }
-                tokenOtpInfo.setOtpInfo(
-                        otpService.generate(AES256Util.decryptAES(config.getKmsKey(), account.getEmail()),
-                                account.getOtpSecretKey()));
-                if (StringUtils.hasLength(account.getOtpSecretKey())) {
-                    tokenOtpInfo.setIsCode(true);
-                } else {
-                    tokenOtpInfo.setIsCode(false);
-                }
-                if(account.getStatus() == null || StringUtils.hasLength(account.getStatus().name()) == false){
-                    return Mono.error(new UnauthorizedException(LOGIN_USER_NOT_MATCHED));
-                }
+                tokenOtpInfo.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
+                OtpResponse otpResponse = otpService.generate(decryptEmail, account.getOtpSecretKey());
+                tokenOtpInfo.setValidData(otpResponse.getEncodeKey());
                 String status = account.getStatus().name();
                 if((Status.NORMAL).equals(status)){
                     tokenOtpInfo.setStatus(Status.NORMAL);

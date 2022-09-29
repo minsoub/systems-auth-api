@@ -96,19 +96,19 @@ public class UserTokenService implements TokenService {
    * @param tokenType the token type
    * @return mono mono
    */
-  public Mono<TokenOtpInfo> generateTokenOne(UserAccount account, TokenType tokenType) {
+  public Mono<TokenOtpInfo> generateTokenOne(UserAccount account, String decryptEmail, TokenType tokenType) {
     log.debug("generateTokenOne create......{} {}", account.getId(), tokenType);
     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
             .builder()
             .secret(jwtProperties.getSecret())
             .expiration(jwtProperties.getAccessExpiration())
             .subject(SecurityConstant.LRC_SITE_ID)
-            .issuer(account.getEmail())
+            .issuer(decryptEmail)
             .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
             .build();
 
-    TokenOtpInfo tokenInfo = generateOtp(generateTokenInfo);
-    tokenInfo.toBuilder().siteId(SecurityConstant.LRC_SITE_ID).build();
+    TokenOtpInfo tokenInfo = generateOtp(generateTokenInfo).toBuilder().siteId(SecurityConstant.LRC_SITE_ID).build();
+    log.debug("siteId:{}", SecurityConstant.LRC_SITE_ID);
     return authRedisService.saveToken(account.getEmail() + "::LRC", tokenInfo.toString())
             .map(result -> tokenInfo);
   }
