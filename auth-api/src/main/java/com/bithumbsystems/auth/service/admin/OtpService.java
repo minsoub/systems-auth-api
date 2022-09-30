@@ -218,4 +218,53 @@ public class OtpService {
 
     return String.format(format2, user, host, secret);
   }
+
+  /**
+   * 사용자(LRC)용 OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
+   *
+   * @param request the request
+   * @return mono mono
+   */
+  public Mono<TokenInfo> otpValidationForUser(OtpRequest request) {
+    // Token Validation check and otp no check
+    log.debug("otp validation check start => {}", request);
+
+    String encodeKey = AES256Util.decryptAES(config.getCryptoKey(), request.getCheckData());
+
+    return
+            checkExpiredOTP(request, encodeKey)
+                    .then(
+
+                            JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
+                                    .flatMap(result -> {
+                                      // success token validation check
+                                      // otp validation check
+                                      log.debug("jwt validation check completed : {}", result);
+                                      if (otpCheckCode(request.getOtpNo(),
+                                              encodeKey)) { // request.getEncodeKey())) {
+                                        // 2차 토큰 생성
+                                        log.debug("2차 토큰 생성");
+
+                                        return adminTokenService.generateToken(
+                                                TokenGenerateRequest.builder()
+                                                        .accountId(result.claims.get("account_id").toString())
+                                                        .roles(result.claims.get("ROLE"))
+                                                        .siteId(request.getSiteId())
+                                                        .status(request.getStatus())
+                                                        .email(result.claims.getIssuer())
+                                                        .name(request.getName())
+                                                        .build()
+                                        ).publishOn(Schedulers.boundedElastic()).doOnSuccess(n -> {
+                                          // OTP 조회 이력 Redis에 저장
+                                          otpHistoryDomainService.save(OtpHistory.builder()
+                                                  .id(request.getSiteId() + ":" + encodeKey + ":" + request.getOtpNo())
+                                                  .build());
+                                        }).flatMap(Mono::just);
+                                      } else {
+                                        log.debug("OTP check error");
+                                        return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
+                                      }
+                                    })
+                    );
+  }
 }

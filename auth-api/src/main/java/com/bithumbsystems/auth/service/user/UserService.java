@@ -4,9 +4,11 @@ package com.bithumbsystems.auth.service.user;
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
+import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
@@ -27,6 +29,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -213,23 +217,25 @@ public class UserService {
               }
           }
             String decryptEmail = AES256Util.decryptAES(config.getKmsKey(), account.getEmail());
-            return userTokenService.generateTokenOne(account, decryptEmail, TokenType.ACCESS).flatMap(tokenOtpInfo -> {
-                log.debug("authenticateUser-generateToken => {}", tokenOtpInfo);
-                tokenOtpInfo.setEmail(decryptEmail);
-                if(StringUtils.hasLength(account.getName())){
-                    tokenOtpInfo.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
-                }else{
-                    tokenOtpInfo.setName("");
-                }
-                tokenOtpInfo.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
-                OtpResponse otpResponse = otpService.generate(decryptEmail, account.getOtpSecretKey());
-                tokenOtpInfo.setValidData(otpResponse.getEncodeKey());
-                String status = account.getStatus().name();
-                if((Status.NORMAL).equals(status)){
-                    tokenOtpInfo.setStatus(Status.NORMAL);
-                }
-                return Mono.just(tokenOtpInfo);
-            });
+            return userTokenService.generateTokenOne(account, decryptEmail, TokenType.ACCESS)
+                    .flatMap(tokenOtpInfo -> {
+                        log.debug("authenticateUser-generateToken => {}", tokenOtpInfo);
+                        tokenOtpInfo.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail()));
+                        if(StringUtils.hasLength(account.getName())){
+                            tokenOtpInfo.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
+                        }else{
+                            tokenOtpInfo.setName("");
+                        }
+                        tokenOtpInfo.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
+                        OtpResponse otpResponse = otpService.generate(decryptEmail, account.getOtpSecretKey());
+                        tokenOtpInfo.setValidData(otpResponse.getEncodeKey());
+                        String status = account.getStatus().name();
+                        log.debug("status:{}", status);
+                        if((Status.NORMAL.toString()).equals(status)){
+                            tokenOtpInfo.setStatus(Status.NORMAL);
+                        }
+                        return Mono.just(tokenOtpInfo);
+                    });
 /*
           return userTokenService.generateToken(TokenGenerateRequest.builder()
               .accountId(account.getId())
@@ -269,4 +275,14 @@ public class UserService {
     // 5분이 지남
     return sec <= 300;
   }
+
+    /**
+     * 사용자 2차 로그인 (otp 로그인)
+     *
+     * @param otpRequest the otp request
+     * @return mono mono
+     */
+    public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
+        return otpRequest.flatMap(otpService::otpValidationForUser);
+    }
 }

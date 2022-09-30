@@ -3,7 +3,9 @@ package com.bithumbsystems.auth.api.handler;
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
+import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
@@ -115,5 +117,10 @@ public class UserAuthHandler {
     Mono<UserJoinRequest> joinRequest = request.bodyToMono(UserJoinRequest.class);
 
     return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
+  }
+
+  public Mono<ServerResponse> otp(ServerRequest request) {
+    Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
+    return ServerResponse.ok().body(userService.otp(otpRequest), TokenInfo.class);
   }
 }
