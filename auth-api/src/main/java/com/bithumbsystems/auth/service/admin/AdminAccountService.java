@@ -18,6 +18,7 @@ import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
+import com.bithumbsystems.auth.core.util.OtpUtil;
 import com.bithumbsystems.auth.core.util.message.MessageService;
 import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
@@ -230,7 +231,7 @@ public class AdminAccountService {
           result.setEmail(AES256Util.encryptAES(config.getCryptoKey(), account.getEmail()));
           result.setName( AES256Util.encryptAES(config.getCryptoKey(), account.getName())); // name add
           result.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
-          OtpResponse otpResponse = otpService.generate(account.getEmail(), account.getOtpSecretKey());
+          OtpResponse otpResponse = OtpUtil.generate(account.getEmail(), config.getCryptoKey(), account.getOtpSecretKey());
           result.setValidData(otpResponse.getEncodeKey());
           if (account.getLastLoginDate() == null || account.getLastPasswordUpdateDate() == null) {
             result.setStatus(Status.INIT_REQUEST);

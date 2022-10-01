@@ -1,4 +1,4 @@
-package com.bithumbsystems.auth.service.user;
+package com.bithumbsystems.auth.service.lrc;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class CaptchaService {
+public class LrcCaptchaService {
 
   @Value("${google.recaptcha.secret.lrc}")
   private String secret;
@@ -50,7 +50,7 @@ public class CaptchaService {
           log.debug("resultMap-success:{}", resultMap.get("success"));
           log.debug("#######################################################################");
           log.debug("===[doVerify]==========================================================");
-          if (resultMap != null && resultMap.containsKey("success") && resultMap.get("success") instanceof Boolean) {
+          if (resultMap.containsKey("success") && resultMap.get("success") instanceof Boolean) {
             return (Boolean) resultMap.get("success");
           } else {
             return false;

@@ -1,15 +1,15 @@
 package com.bithumbsystems.auth.data.mongodb.client.service;
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
-import com.bithumbsystems.auth.data.mongodb.client.repository.UserAccountRepository;
+import com.bithumbsystems.auth.data.mongodb.client.entity.LrcAccount;
+import com.bithumbsystems.auth.data.mongodb.client.repository.LrcAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
-public class UserAccountDomainService {
-    private final UserAccountRepository repository;
+public class LrcAccountDomainService {
+    private final LrcAccountRepository repository;
 
     /**
      * 사용자 이메일 정보를 통해서 사용자 정보를 조회한다.
@@ -17,7 +17,7 @@ public class UserAccountDomainService {
      * @param email
      * @return
      */
-    public Mono<UserAccount> findByEmail(String email) {
+    public Mono<LrcAccount> findByEmail(String email) {
         return repository.findByEmail(email);
     }
 
@@ -27,7 +27,7 @@ public class UserAccountDomainService {
      * @param user
      * @return
      */
-    public Mono<UserAccount> save(UserAccount user) {
+    public Mono<LrcAccount> save(LrcAccount user) {
         return repository.save(user);
     }
 
@@ -36,7 +36,7 @@ public class UserAccountDomainService {
      * @param id
      * @return
      */
-    public Mono<UserAccount> findById(String id) {
+    public Mono<LrcAccount> findById(String id) {
         return repository.findById(id);
     }
 

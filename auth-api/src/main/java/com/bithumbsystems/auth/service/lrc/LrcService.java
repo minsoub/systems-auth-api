@@ -1,10 +1,10 @@
-package com.bithumbsystems.auth.service.user;
+package com.bithumbsystems.auth.service.lrc;
 
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
+import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.ErrorData;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
-import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
@@ -17,20 +17,18 @@ import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
-import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
+import com.bithumbsystems.auth.core.util.OtpUtil;
+import com.bithumbsystems.auth.data.mongodb.client.entity.LrcAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
-import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
+import com.bithumbsystems.auth.data.mongodb.client.service.LrcAccountDomainService;
 import com.bithumbsystems.auth.service.AuthService;
-import com.bithumbsystems.auth.service.admin.OtpService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -44,18 +42,19 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.*;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class UserService {
+public class LrcService {
 
-  private final UserAccountDomainService userAccountDomainService;
-  private final UserTokenService userTokenService;
+  private final LrcAccountDomainService userAccountDomainService;
+  private final LrcTokenService userTokenService;
   private final AwsConfig config;
-  private final OtpService otpService;
+  private final LrcOtpService lrcOtpService;
   private final PasswordEncoder passwordEncoder;
 
-  private final CaptchaService captchaService;
+  private final LrcCaptchaService captchaService;
   private final RsaCipherService rsaCipherService;
   private final AuthService authService;
   private static final int PASSWORD_EXPIRE_DAY = 90;    // 비밀번호 만료일
+  private final JwtProperties jwtProperties;
   /**
    * 일반 사용자 로그인 처리 - 1차 로그인
    *
@@ -67,7 +66,6 @@ public class UserService {
         .flatMap(privateKey -> userRequest.flatMap(request -> authenticateUser(
                 rsaCipherService.decryptRSA(request.getEmail(), privateKey)
                 , rsaCipherService.decryptRSA(request.getPasswd(), privateKey)
-                , request.getSiteId()
             ))
         );
   }
@@ -87,7 +85,6 @@ public class UserService {
                     return authenticateUser(
                         rsaCipherService.decryptRSA(request.getEmail(), privateKey)
                         , rsaCipherService.decryptRSA(request.getPasswd(), privateKey)
-                        , request.getSiteId()
                     ).switchIfEmpty(Mono.error(new UnauthorizedException(AUTHENTICATION_FAIL)));
                   }
                   return Mono.error(new UnauthorizedException(CAPTCHA_FAIL));
@@ -129,7 +126,7 @@ public class UserService {
     log.debug("userRegister name => {}", name);
     log.debug("userRegister phone => {}", phone);
 
-    UserAccount user = UserAccount.builder()
+      LrcAccount user = LrcAccount.builder()
         .email(email)  // config.encrypt(req.getEmail()))
         .name(name)    // config.encrypt(req.getName()))
         .password(passwordEncoder.encode(req.getPassword()))
@@ -149,20 +146,14 @@ public class UserService {
         });
   }
 
-  /**
-   * 1차 인증 후 사용자 Otp 생성
-   *
-   * @param email
-   * @param password
-   * @param siteId
-   * @return
-   */
-  private Mono<TokenOtpInfo> authenticateUser(String email, String password, String siteId) {
-      log.debug("email:{}", email);
-      log.debug("getKmsKey():{}", config.getKmsKey());
-      log.debug("getSaltKey():{}", config.getSaltKey());
-      log.debug("getIvKey():{}", config.getIvKey());
-      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey());
+    /**
+     * 1차 인증 후 사용자 Otp 생성
+     * @param email
+     * @param password
+     * @return
+     */
+  private Mono<TokenOtpInfo> authenticateUser(String email, String password) {
+    String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), email, config.getSaltKey(), config.getIvKey());
     return userAccountDomainService.findByEmail(encryptEmail)
         .flatMap(account -> {
           log.debug("result account data => {}", account);
@@ -227,7 +218,7 @@ public class UserService {
                             tokenOtpInfo.setName("");
                         }
                         tokenOtpInfo.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
-                        OtpResponse otpResponse = otpService.generate(decryptEmail, account.getOtpSecretKey());
+                        OtpResponse otpResponse = OtpUtil.generate(decryptEmail, config.getCryptoKey(), account.getOtpSecretKey());
                         tokenOtpInfo.setValidData(otpResponse.getEncodeKey());
                         String status = account.getStatus().name();
                         log.debug("status:{}", status);
@@ -236,27 +227,6 @@ public class UserService {
                         }
                         return Mono.just(tokenOtpInfo);
                     });
-/*
-          return userTokenService.generateToken(TokenGenerateRequest.builder()
-              .accountId(account.getId())
-              .roles("USER")
-              .siteId(siteId)
-              .email(account.getEmail())
-              .claims(Map.of("ROLE", "USER", "account_id", account.getId()))
-              .build())
-              .publishOn(Schedulers.boundedElastic())
-              .map(result -> {
-                log.debug("generateToken => {}", result);
-                account.setLastLoginDate(LocalDateTime.now());
-                account.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
-                account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
-                userAccountDomainService.save(account).then().log("result completed...")
-                    .subscribe();
-                  result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()))); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
-                return result;
-              });
-
- */
         })
         .switchIfEmpty(Mono.error(new UnauthorizedException(LOGIN_USER_NOT_MATCHED)));
   }
@@ -278,11 +248,10 @@ public class UserService {
 
     /**
      * 사용자 2차 로그인 (otp 로그인)
-     *
-     * @param otpRequest the otp request
-     * @return mono mono
+     * @param otpRequest
+     * @return
      */
-    public Mono<TokenInfo> otp(Mono<OtpRequest> otpRequest) {
-        return otpRequest.flatMap(otpService::otpValidationForUser);
+    public Mono<TokenResponse> otp(Mono<OtpRequest> otpRequest) {
+        return otpRequest.flatMap(lrcOtpService::otpValidation);
     }
 }

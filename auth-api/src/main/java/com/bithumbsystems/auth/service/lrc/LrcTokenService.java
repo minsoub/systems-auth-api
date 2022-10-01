@@ -1,4 +1,4 @@
-package com.bithumbsystems.auth.service.user;
+package com.bithumbsystems.auth.service.lrc;
 
 import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
@@ -11,7 +11,7 @@ import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
-import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
+import com.bithumbsystems.auth.data.mongodb.client.entity.LrcAccount;
 import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.TokenService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import static com.bithumbsystems.auth.core.util.JwtGenerateUtil.generateOtp;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserTokenService implements TokenService {
+public class LrcTokenService implements TokenService {
 
   private final JwtProperties jwtProperties;
   private final AuthRedisService authRedisService;
@@ -96,7 +96,7 @@ public class UserTokenService implements TokenService {
    * @param tokenType the token type
    * @return mono mono
    */
-  public Mono<TokenOtpInfo> generateTokenOne(UserAccount account, String decryptEmail, TokenType tokenType) {
+  public Mono<TokenOtpInfo> generateTokenOne(LrcAccount account, String decryptEmail, TokenType tokenType) {
     log.debug("generateTokenOne create......{} {}", account.getId(), tokenType);
     GenerateTokenInfo generateTokenInfo = GenerateTokenInfo
             .builder()

@@ -13,7 +13,7 @@ import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.KeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
-import com.bithumbsystems.auth.service.user.UserService;
+import com.bithumbsystems.auth.service.lrc.LrcService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,7 +32,7 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class UserAuthHandler {
 
-  private final UserService userService;
+  private final LrcService userService;
 
   private final AwsConfig config;
 
@@ -43,7 +43,7 @@ public class UserAuthHandler {
    * @return
    */
   public Mono<ServerResponse> initKey(ServerRequest request) {
-    String siteId = null;
+    String siteId = "";
     String cryptoKey = null;
     if (!request.exchange().getRequest().getHeaders().containsKey(SecurityConstant.SITE_ID)) {
       log.debug(">>>>> SITE ID NOT CONTAINS <<<<<");
@@ -56,11 +56,11 @@ public class UserAuthHandler {
     }
 
     // LRC/CPC/SMART-ADMIN
-    if (siteId.equals(SecurityConstant.CPC_SITE_ID)) {
+    if ((SecurityConstant.CPC_SITE_ID).equals(siteId)) {
       cryptoKey = config.getCpcCryptoKey();
-    } else if(siteId.equals(SecurityConstant.LRC_SITE_ID)) {
+    } else if((SecurityConstant.LRC_SITE_ID).equals(siteId)) {
       cryptoKey = config.getLrcCryptoKey();
-    } else if(siteId.equals(SecurityConstant.MNG_SITE_ID)) {
+    } else if((SecurityConstant.MNG_SITE_ID).equals(siteId)) {
       cryptoKey = config.getCryptoKey();
     }
 

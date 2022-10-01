@@ -1,16 +1,16 @@
-package com.bithumbsystems.auth.service.admin;
+package com.bithumbsystems.auth.service.lrc;
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
+import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
-import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
+import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.core.util.OtpUtil;
-import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
-import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.data.mongodb.client.service.LrcAccountDomainService;
 import com.bithumbsystems.auth.data.redis.entity.OtpHistory;
 import com.bithumbsystems.auth.data.redis.service.OtpHistoryDomainService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUMBER;
@@ -30,22 +31,20 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUM
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class OtpService {
+public class LrcOtpService {
 
   private final JwtProperties jwtProperties;
-  private final AdminTokenService adminTokenService;
-  private final AdminAccountDomainService adminAccountDomainService;
   private final OtpHistoryDomainService otpHistoryDomainService;
-
   private final AwsConfig config;
-
+  private final LrcTokenService userTokenService;
+  private final LrcAccountDomainService userAccountDomainService;
   /**
    * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
    *
    * @param request the request
    * @return mono mono
    */
-  public Mono<TokenInfo> otpValidation(OtpRequest request) {
+  public Mono<TokenResponse> otpValidation(OtpRequest request) {
     // Token Validation check and otp no check
     log.debug("otp validation check start => {}", request);
 
@@ -60,43 +59,30 @@ public class OtpService {
                       // success token validation check
                       // otp validation check
                       log.debug("jwt validation check completed : {}", result);
-                      if (OtpUtil.otpCheckCode(request.getOtpNo(),
-                          encodeKey)) { // request.getEncodeKey())) {
+                      if (OtpUtil.otpCheckCode(request.getOtpNo(), encodeKey)) {
                         // 2차 토큰 생성
                         log.debug("2차 토큰 생성");
-
-                        return adminTokenService.generateToken(
-                            TokenGenerateRequest.builder()
-                                .accountId(result.claims.get("account_id").toString())
-                                .roles(result.claims.get("ROLE"))
-                                .siteId(request.getSiteId())
-                                .status(request.getStatus())
-                                .email(result.claims.getIssuer())
-                                .name(request.getName())
-                                .build()
-                        ).publishOn(Schedulers.boundedElastic()).doOnSuccess(n -> {
-                          // OTP 조회 이력 Redis에 저장
-                          otpHistoryDomainService.save(OtpHistory.builder()
-                              .id(request.getSiteId() + ":" + encodeKey + ":" + request.getOtpNo())
-                              .build());
-
-                          // 사용자 encodeKey 저장.
-                          adminAccountDomainService.findById(
-                                  result.claims.get("account_id").toString())
-                              .publishOn(Schedulers.boundedElastic())
-                              .map(account -> {
-                                account.setOtpSecretKey(encodeKey); // request.getEncodeKey());
-                                account.setLastLoginDate(LocalDateTime.now());
-                                account.setLoginFailCount(0L);
-                                if (!OtpUtil.needPasswordChange(account)) {
-                                  account.setStatus(Status.NORMAL);
-                                }
-                                adminAccountDomainService.save(account).then()
-                                    .log("save otp key info")
-                                    .subscribe();
-                                return account;
-                              }).subscribe();
-                        }).flatMap(Mono::just);
+                          String accountId = result.claims.get("account_id").toString();
+                          return userAccountDomainService.findById(accountId).flatMap(userAccount -> {
+                              return userTokenService.generateToken(TokenGenerateRequest.builder()
+                                              .accountId(userAccount.getId())
+                                              .roles("USER")
+                                              .siteId(SecurityConstant.LRC_SITE_ID)
+                                              .email(AES256Util.decryptAES(config.getKmsKey(), userAccount.getEmail()))
+                                              .claims(Map.of("ROLE", "USER", "account_id", userAccount.getId()))
+                                              .build())
+                                      .publishOn(Schedulers.boundedElastic())
+                                      .map(tokenResponse -> {
+                                          log.debug("generateToken => {}", tokenResponse);
+                                          userAccount.setLastLoginDate(LocalDateTime.now());
+                                          userAccount.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
+                                          userAccount.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
+                                          userAccountDomainService.save(userAccount).then().log("result completed...")
+                                                  .subscribe();
+                                          tokenResponse.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), tokenResponse.getEmail()));
+                                          return tokenResponse;
+                                      });
+                          });
                       } else {
                         log.debug("OTP check error");
                         return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));

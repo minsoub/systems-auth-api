@@ -1,7 +1,6 @@
 package com.bithumbsystems.auth.data.mongodb.client.entity;
 
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
-import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -10,13 +9,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "lrc_user_account")
 //@AllArgsConstructor
 @Getter
 @Setter
 @Data
 @Builder
-public class UserAccount {
+public class LrcAccount {
     @MongoId(value = FieldType.STRING, targetType = FieldType.STRING)
     private String id;
     private String email;
