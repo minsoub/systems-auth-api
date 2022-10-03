@@ -1,7 +1,9 @@
 package com.bithumbsystems.auth.data.mongodb.client.service;
 
 import com.bithumbsystems.auth.data.mongodb.client.entity.LrcAccount;
+import com.bithumbsystems.auth.data.mongodb.client.entity.LrcEmailToken;
 import com.bithumbsystems.auth.data.mongodb.client.repository.LrcAccountRepository;
+import com.bithumbsystems.auth.data.mongodb.client.repository.LrcEmailTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -10,7 +12,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class LrcAccountDomainService {
     private final LrcAccountRepository repository;
-
+    private final LrcEmailTokenRepository emailTokenRepository;
     /**
      * 사용자 이메일 정보를 통해서 사용자 정보를 조회한다.
      *
@@ -39,5 +41,10 @@ public class LrcAccountDomainService {
     public Mono<LrcAccount> findById(String id) {
         return repository.findById(id);
     }
-
+    public Mono<LrcEmailToken> getEmailToken(String id) {
+        return emailTokenRepository.findById(id);
+    }
+    public Mono<LrcEmailToken> updateEmailToken(LrcEmailToken token) {
+        return emailTokenRepository.save(token);
+    }
 }

@@ -5,14 +5,14 @@ import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
-import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.KeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
+import com.bithumbsystems.auth.model.lrc.CheckResultResponse;
+import com.bithumbsystems.auth.model.lrc.LrcOtpRequest;
+import com.bithumbsystems.auth.model.lrc.LrcResetRequest;
 import com.bithumbsystems.auth.service.lrc.LrcService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -118,9 +118,16 @@ public class UserAuthHandler {
 
     return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
   }
-
-  public Mono<ServerResponse> otp(ServerRequest request) {
+  public Mono<ServerResponse> otpLogin(ServerRequest request) {
     Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
-    return ServerResponse.ok().body(userService.otp(otpRequest), TokenInfo.class);
+    return ServerResponse.ok().body(userService.otpLogin(otpRequest), TokenInfo.class);
+  }
+  public Mono<ServerResponse> otpResetPasswordCheck(ServerRequest request) {
+    Mono<LrcResetRequest> lrcResetRequestMono = request.bodyToMono(LrcResetRequest.class);
+    return ServerResponse.ok().body(userService.otpResetPasswordCheck(lrcResetRequestMono), TokenInfo.class);
+  }
+  public Mono<ServerResponse> otpResetPasswordValid(ServerRequest request) {
+    Mono<LrcOtpRequest> otpRequest = request.bodyToMono(LrcOtpRequest.class);
+    return ServerResponse.ok().body(userService.otpResetPasswordValid(otpRequest), TokenInfo.class);
   }
 }

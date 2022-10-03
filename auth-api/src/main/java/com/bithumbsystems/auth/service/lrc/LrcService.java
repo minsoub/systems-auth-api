@@ -8,10 +8,7 @@ import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException
 import com.bithumbsystems.auth.core.model.auth.TokenOtpInfo;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.enums.TokenType;
-import com.bithumbsystems.auth.core.model.request.OtpRequest;
-import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
-import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
-import com.bithumbsystems.auth.core.model.request.UserRequest;
+import com.bithumbsystems.auth.core.model.request.*;
 import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
@@ -22,6 +19,10 @@ import com.bithumbsystems.auth.data.mongodb.client.entity.LrcAccount;
 import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
 import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
 import com.bithumbsystems.auth.data.mongodb.client.service.LrcAccountDomainService;
+import com.bithumbsystems.auth.model.lrc.CheckResultResponse;
+import com.bithumbsystems.auth.model.lrc.LrcOtpRequest;
+import com.bithumbsystems.auth.model.lrc.LrcResetRequest;
+import com.bithumbsystems.auth.model.lrc.ResetInfoResponse;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import lombok.RequiredArgsConstructor;
@@ -251,7 +252,13 @@ public class LrcService {
      * @param otpRequest
      * @return
      */
-    public Mono<TokenResponse> otp(Mono<OtpRequest> otpRequest) {
+    public Mono<TokenResponse> otpLogin(Mono<OtpRequest> otpRequest) {
         return otpRequest.flatMap(lrcOtpService::otpValidation);
+    }
+    public Mono<ResetInfoResponse> otpResetPasswordCheck(Mono<LrcResetRequest> resetRequest) {
+        return resetRequest.flatMap(lrcOtpService::passwordResetTokenCheck);
+    }
+    public Mono<CheckResultResponse> otpResetPasswordValid(Mono<LrcOtpRequest> otpRequest) {
+        return otpRequest.flatMap(lrcOtpService::otpResetPasswordValid);
     }
 }

@@ -403,7 +403,9 @@ public class AuthTokenRouter {
             .POST("/api/v1/user/join", userAuthHandler::userJoin)
             .GET("/api/v1/user/public-key", authHandler::publicKey)
             .POST("/api/v1/authorize", authHandler::authorize)
-            .POST("/api/v1/user/otp", userAuthHandler::otp)
+            .POST("/api/v1/user/otp/login", userAuthHandler::otpLogin)
+            .PUT("/api/v1/user/otp/reset/password/check", userAuthHandler::otpResetPasswordCheck)
+            .PUT("/api/v1/user/otp/reset/password/valid", userAuthHandler::otpResetPasswordValid)
             .build();
     }
 
