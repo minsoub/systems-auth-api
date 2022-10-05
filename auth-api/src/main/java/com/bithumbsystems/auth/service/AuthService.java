@@ -1,7 +1,10 @@
 package com.bithumbsystems.auth.service;
 
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.DuplicatedLoginException;
+import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
 import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
@@ -56,12 +59,12 @@ public class AuthService {
   public Mono<String> authorize(Mono<TokenValidationRequest> tokenRequest) {
     return tokenRequest
         .flatMap(this::tokenValidate)
-//        .flatMap(verificationResult -> checkAvailableResource(verificationResult).flatMap(isAccess -> {
-//          if(Boolean.FALSE.equals(isAccess)) {
-//            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
-//          }
-//          return Mono.just(verificationResult);
-//        }))
+        .flatMap(verificationResult -> checkAvailableResource(verificationResult).flatMap(isAccess -> {
+          if(Boolean.FALSE.equals(isAccess)) {
+            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+          }
+          return Mono.just(verificationResult);
+        }))
         .flatMap(verificationResult -> {
           var key = verificationResult.claims.getIssuer();
           if (verificationResult.claims.get("ROLE").equals("USER")) {
@@ -70,10 +73,7 @@ public class AuthService {
 
           return authRedisService.getToken(key)
               .filter(token -> token.equals(verificationResult.token))
-              .map(token -> {
-                log.debug("authorize : {}", token);
-                return ResultCode.SUCCESS.name();
-              }).switchIfEmpty(
+              .map(token -> ResultCode.SUCCESS.name()).switchIfEmpty(
                   Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
         });
   }
@@ -94,10 +94,7 @@ public class AuthService {
         .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
                 .switchIfEmpty(extractProgram(verificationResult.activeRole))
                 .flatMap(programString -> {
-                  log.debug("request uri: {}", verificationResult.requestUri);
-                  log.debug("programString: " + programString);
                   var hasResource = hasResource(programString, verificationResult.requestUri, verificationResult.method);
-                  log.debug("result:" + hasResource);
                   return Mono.just(hasResource);
                 })
         ).switchIfEmpty(Mono.just(true));
@@ -110,7 +107,6 @@ public class AuthService {
         .map(Object::toString)
         .publishOn(Schedulers.boundedElastic())
         .doOnSuccess(programs -> {
-          log.debug("redis save programs: " + programs);
           authRedisService.saveAuthorization(roleManagementId, programs).subscribe();
         });
   }
