@@ -3,7 +3,9 @@ package com.bithumbsystems.auth.api.handler;
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.core.model.auth.TokenInfo;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
+import com.bithumbsystems.auth.core.model.request.OtpRequest;
 import com.bithumbsystems.auth.core.model.request.UserCaptchaRequest;
 import com.bithumbsystems.auth.core.model.request.UserJoinRequest;
 import com.bithumbsystems.auth.core.model.request.UserRequest;
@@ -11,16 +13,17 @@ import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.KeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
-import com.bithumbsystems.auth.service.user.UserService;
+import com.bithumbsystems.auth.model.lrc.LrcOtpRequest;
+import com.bithumbsystems.auth.model.lrc.LrcResetRequest;
+import com.bithumbsystems.auth.service.lrc.LrcService;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 /**
  * The type Auth handler.
@@ -30,7 +33,7 @@ import java.util.Base64;
 @RequiredArgsConstructor
 public class UserAuthHandler {
 
-  private final UserService userService;
+  private final LrcService userService;
 
   private final AwsConfig config;
 
@@ -41,7 +44,7 @@ public class UserAuthHandler {
    * @return
    */
   public Mono<ServerResponse> initKey(ServerRequest request) {
-    String siteId = null;
+    String siteId = "";
     String cryptoKey = null;
     if (!request.exchange().getRequest().getHeaders().containsKey(SecurityConstant.SITE_ID)) {
       log.debug(">>>>> SITE ID NOT CONTAINS <<<<<");
@@ -54,11 +57,11 @@ public class UserAuthHandler {
     }
 
     // LRC/CPC/SMART-ADMIN
-    if (siteId.equals(SecurityConstant.CPC_SITE_ID)) {
+    if ((SecurityConstant.CPC_SITE_ID).equals(siteId)) {
       cryptoKey = config.getCpcCryptoKey();
-    } else if(siteId.equals(SecurityConstant.LRC_SITE_ID)) {
+    } else if((SecurityConstant.LRC_SITE_ID).equals(siteId)) {
       cryptoKey = config.getLrcCryptoKey();
-    } else if(siteId.equals(SecurityConstant.MNG_SITE_ID)) {
+    } else if((SecurityConstant.MNG_SITE_ID).equals(siteId)) {
       cryptoKey = config.getCryptoKey();
     }
 
@@ -115,5 +118,17 @@ public class UserAuthHandler {
     Mono<UserJoinRequest> joinRequest = request.bodyToMono(UserJoinRequest.class);
 
     return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
+  }
+  public Mono<ServerResponse> otpLogin(ServerRequest request) {
+    Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
+    return ServerResponse.ok().body(userService.otpLogin(otpRequest), TokenInfo.class);
+  }
+  public Mono<ServerResponse> otpResetPasswordCheck(ServerRequest request) {
+    Mono<LrcResetRequest> lrcResetRequestMono = request.bodyToMono(LrcResetRequest.class);
+    return ServerResponse.ok().body(userService.otpResetPasswordCheck(lrcResetRequestMono), TokenInfo.class);
+  }
+  public Mono<ServerResponse> otpResetPasswordValid(ServerRequest request) {
+    Mono<LrcOtpRequest> otpRequest = request.bodyToMono(LrcOtpRequest.class);
+    return ServerResponse.ok().body(userService.otpResetPasswordValid(otpRequest), TokenInfo.class);
   }
 }

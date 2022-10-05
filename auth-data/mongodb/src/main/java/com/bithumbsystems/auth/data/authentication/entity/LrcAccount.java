@@ -16,7 +16,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @Setter
 @Data
 @Builder
-public class UserAccount {
+public class LrcAccount {
     @MongoId(value = FieldType.STRING, targetType = FieldType.STRING)
     private String id;
     private String email;
