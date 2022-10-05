@@ -1,4 +1,4 @@
-package com.bithumbsystems.auth.data.mongodb.client.entity;
+package com.bithumbsystems.auth.data.authentication.entity;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;

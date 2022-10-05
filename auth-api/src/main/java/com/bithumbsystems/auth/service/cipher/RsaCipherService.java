@@ -22,14 +22,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class RsaCipherService {
 
-  public final static String RSA_ALGORITHM = "RSA";
-  public final static String PRIVATE_KEY_NAME = "privateKey";
-  public final static String PUBLIC_KEY_NAME = "publicKey";
+  public static final String RSA_ALGORITHM = "RSA";
+  public static final String PRIVATE_KEY_NAME = "privateKey";
+  public static final String PUBLIC_KEY_NAME = "publicKey";
 
   public KeyPairGenerator rsaGenerator;
 
   public RsaCipherService() throws NoSuchAlgorithmException {
-    rsaGenerator = KeyPairGenerator.getInstance(RsaCipherService.RSA_ALGORITHM);
+    rsaGenerator = KeyPairGenerator.getInstance(RSA_ALGORITHM);
     rsaGenerator.initialize(2048, new SecureRandom());
   }
 
@@ -43,8 +43,8 @@ public class RsaCipherService {
     String base64PublicKey = Base64.getEncoder().encodeToString(publicKey.getEncoded());
 
     Map<String, String> resultMap = new HashMap<>();
-    resultMap.put(RsaCipherService.PRIVATE_KEY_NAME, base64PrivateKey);
-    resultMap.put(RsaCipherService.PUBLIC_KEY_NAME, base64PublicKey);
+    resultMap.put(PRIVATE_KEY_NAME, base64PrivateKey);
+    resultMap.put(PUBLIC_KEY_NAME, base64PublicKey);
 
     return resultMap;
   }
@@ -53,7 +53,7 @@ public class RsaCipherService {
       throws NoSuchAlgorithmException, InvalidKeySpecException {
     byte[] decodedBase64PubKey = Base64.getDecoder().decode(base64PublicKey);
 
-    return KeyFactory.getInstance(RsaCipherService.RSA_ALGORITHM)
+    return KeyFactory.getInstance(RSA_ALGORITHM)
         .generatePublic(new X509EncodedKeySpec(decodedBase64PubKey));
   }
 
@@ -61,7 +61,7 @@ public class RsaCipherService {
       throws NoSuchAlgorithmException, InvalidKeySpecException {
     byte[] decodedBase64PrivateKey = Base64.getDecoder().decode(base64PrivateKey);
 
-    return KeyFactory.getInstance(RsaCipherService.RSA_ALGORITHM)
+    return KeyFactory.getInstance(RSA_ALGORITHM)
         .generatePrivate(new PKCS8EncodedKeySpec(decodedBase64PrivateKey));
   }
 
@@ -70,7 +70,7 @@ public class RsaCipherService {
     String encryptedText = "";
 
     try {
-      Cipher cipher = Cipher.getInstance(RsaCipherService.RSA_ALGORITHM);
+      Cipher cipher = Cipher.getInstance(RSA_ALGORITHM);
       cipher.init(Cipher.ENCRYPT_MODE, this.getPublicKeyFromBase64Encrypted(publicKey));
 
       byte[] bytePlain = cipher.doFinal(plainText.getBytes());
@@ -86,7 +86,7 @@ public class RsaCipherService {
     String plainText = "";
 
     try {
-      Cipher cipher = Cipher.getInstance(RsaCipherService.RSA_ALGORITHM);
+      Cipher cipher = Cipher.getInstance(RSA_ALGORITHM);
       cipher.init(Cipher.DECRYPT_MODE, this.getPrivateKeyFromBase64Encrypted(privateKey));
       byte[] byteEncrypted = Base64.getDecoder().decode(encryptedText.getBytes());
 

@@ -1,29 +1,34 @@
-package com.bithumbsystems.auth.data.mongodb.client.entity;
+package com.bithumbsystems.auth.data.authorization.entity;
 
-import com.bithumbsystems.auth.data.mongodb.client.enums.RoleType;
-import java.time.LocalDate;
+import com.bithumbsystems.auth.data.authentication.enums.RoleType;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
-@Document(collection = "role_management")
+@Document(collection = "program")
+@AllArgsConstructor
 @Getter
 @Setter
+@Builder
 @ToString
-public class RoleManagement {
+@NoArgsConstructor
+public class Program {
   @MongoId(targetType = FieldType.STRING)
   private String id;
   private String name;
   private RoleType type;
+  private String kindName;
+  private String actionMethod;
+  private String actionUrl;
   private Boolean isUse;
-  private LocalDate validStartDate;
-  private LocalDate validEndDate;
-  @Indexed
+  private String description;
   private String siteId;
   private LocalDateTime createDate;
   private String createAdminAccountId;

@@ -11,9 +11,9 @@ import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.OtpResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
-import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
-import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
-import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.data.authentication.entity.AdminAccount;
+import com.bithumbsystems.auth.data.authentication.enums.Status;
+import com.bithumbsystems.auth.data.authentication.service.AdminAccountDomainService;
 import com.bithumbsystems.auth.data.redis.entity.OtpHistory;
 import com.bithumbsystems.auth.data.redis.service.OtpHistoryDomainService;
 import java.security.InvalidKeyException;
@@ -101,7 +101,6 @@ public class OtpService {
                                   account.setStatus(Status.NORMAL);
                                 }
                                 adminAccountDomainService.save(account).then()
-                                    .log("save otp key info")
                                     .subscribe();
                                 return account;
                               }).subscribe();

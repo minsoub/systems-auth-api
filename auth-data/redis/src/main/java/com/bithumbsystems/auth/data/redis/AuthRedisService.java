@@ -20,7 +20,7 @@ public class AuthRedisService{
    *
    * @param userId the user id
    * @param token  the token
-   * @return mono
+   * @return mono mono
    */
   public Mono<Boolean> saveToken(String userId, String token) {
     return save(userId, token);
@@ -30,7 +30,7 @@ public class AuthRedisService{
    * Key를 통해서 토큰 정보를 조회한다.
    *
    * @param userId the user id
-   * @return token
+   * @return token token
    */
   public Mono<String> getToken(String userId) {
     return getValue(userId);
@@ -39,8 +39,8 @@ public class AuthRedisService{
   /**
    * key가 존재하는지 체크한다.
    *
-   * @param key
-   * @return
+   * @param key the key
+   * @return check key
    */
   public Mono<Boolean> getCheckKey(String key) {
     return getValue(key)
@@ -52,7 +52,7 @@ public class AuthRedisService{
    * key를 통해서 토큰 정보를 삭제한다.
    *
    * @param userId the user id
-   * @return mono
+   * @return mono mono
    */
   public Mono<Boolean> deleteToken(String userId) {
     return delete(userId);
@@ -108,7 +108,29 @@ public class AuthRedisService{
    * @param key the key
    * @return result mono
    */
-  private Mono<Boolean> delete(String key) {
+  public Mono<Boolean> delete(String key) {
     return redisTemplate.opsForValue().delete(key);
   }
+
+  /**
+   * roleManagementId 통해서 프로그램 정보를 조회한다.
+   *
+   * @param roleManagementId roleManagementId
+   * @return program list
+   */
+  public Mono<String> getRoleAuthorization(String roleManagementId) {
+    return getValue(roleManagementId);
+  }
+
+  /**
+   * Redis Key 정보를 저장한다.
+   *
+   * @param roleManagementId the role management id
+   * @param programString      the program list
+   * @return mono mono
+   */
+  public Mono<Boolean> saveAuthorization(String roleManagementId, String programString) {
+    return save(roleManagementId, programString);
+  }
+
 }

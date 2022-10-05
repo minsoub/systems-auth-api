@@ -1,7 +1,7 @@
-package com.bithumbsystems.auth.data.mongodb.client.repository;
+package com.bithumbsystems.auth.data.authentication.repository;
 
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.RoleManagement;
+import com.bithumbsystems.auth.data.authentication.entity.RoleManagement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;

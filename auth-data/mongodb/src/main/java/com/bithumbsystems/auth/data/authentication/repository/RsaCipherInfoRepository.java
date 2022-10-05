@@ -1,6 +1,6 @@
-package com.bithumbsystems.auth.data.mongodb.client.repository;
+package com.bithumbsystems.auth.data.authentication.repository;
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.RsaCipherInfo;
+import com.bithumbsystems.auth.data.authentication.entity.RsaCipherInfo;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 

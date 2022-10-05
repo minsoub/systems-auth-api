@@ -1,12 +1,11 @@
 package com.bithumbsystems.auth.api.init;
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.RsaCipherInfo;
 import com.bithumbsystems.auth.service.AuthService;
-import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -15,11 +14,10 @@ public class InitialSetting {
 
   private final AuthService authService;
 
-  @PostConstruct
+  @EventListener(ContextRefreshedEvent.class)
   public void setInitialData() {
-    log.debug(">>> start setInitialData");
-    Mono<RsaCipherInfo> rsaCipherInfoMono = authService.createRsaCipherCache();
-    log.debug(">>> RsaCipherInfo : {}", rsaCipherInfoMono.block().toString());
-    log.debug(">>> end setInitialData");
+    log.info(">>> start setInitialData");
+    authService.createRsaCipherCache().subscribe();
+    log.info(">>> end setInitialData");
   }
 }

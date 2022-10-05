@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.core.model.response.token;
 
-import com.bithumbsystems.auth.data.mongodb.client.enums.Status;
+import com.bithumbsystems.auth.data.authentication.enums.Status;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

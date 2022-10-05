@@ -11,7 +11,6 @@ import com.bithumbsystems.auth.core.model.request.token.AuthRequest;
 import com.bithumbsystems.auth.core.model.response.KeyResponse;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
-import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
 import com.bithumbsystems.auth.service.admin.AdminAccountService;
 import com.bithumbsystems.auth.service.admin.AdminTokenService;
 import lombok.RequiredArgsConstructor;

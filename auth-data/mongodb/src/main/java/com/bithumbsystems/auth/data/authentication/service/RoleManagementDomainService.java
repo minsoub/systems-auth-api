@@ -1,8 +1,8 @@
-package com.bithumbsystems.auth.data.mongodb.client.service;
+package com.bithumbsystems.auth.data.authentication.service;
 
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.RoleManagement;
-import com.bithumbsystems.auth.data.mongodb.client.repository.RoleManagementRepository;
+import com.bithumbsystems.auth.data.authentication.entity.RoleManagement;
+import com.bithumbsystems.auth.data.authentication.repository.RoleManagementRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -23,6 +23,10 @@ public class RoleManagementDomainService {
         LocalDate.now(),
         LocalDate.now(),
         true);
+  }
+
+  public Flux<RoleManagement> findAll() {
+    return roleManagementRepository.findAll();
   }
 
   public Flux<RoleManagement> findByRoleInIds(Set<String> roleManagementIds) {

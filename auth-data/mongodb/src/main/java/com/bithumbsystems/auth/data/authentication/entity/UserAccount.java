@@ -1,6 +1,6 @@
-package com.bithumbsystems.auth.data.mongodb.client.entity;
+package com.bithumbsystems.auth.data.authentication.entity;
 
-import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
+import com.bithumbsystems.auth.data.authentication.enums.UserStatus;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;

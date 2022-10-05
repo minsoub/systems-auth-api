@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.service.admin.validator;
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
+import com.bithumbsystems.auth.data.authentication.entity.AdminAccount;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

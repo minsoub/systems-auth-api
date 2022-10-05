@@ -24,6 +24,12 @@ public final class JwtVerifyUtil {
      * @param secret the secret
      * @return mono
      */
+    public static Mono<VerificationResult> check(String token, String secret, String requestUri, String method, String activeRole) {
+        log.debug("jwt verify check called.. {}, {}", secret, token);
+        return Mono.just(verify(token, secret, requestUri, method, activeRole))
+            .onErrorResume(e -> Mono.error(new UnauthorizedException(ErrorCode.INVALID_TOKEN)));
+    }
+
     public static Mono<VerificationResult> check(String token, String secret) {
         log.debug("jwt verify check called.. {}, {}", secret, token);
         return Mono.just(verify(token, secret))
@@ -44,6 +50,22 @@ public final class JwtVerifyUtil {
 
         log.debug("return verificationResult");
         return new VerificationResult(claims, token);
+    }
+
+    private static VerificationResult verify(String token, String secret, String requestUri, String method, String activeRole) {
+        log.debug("VerificationResult called.. {}, {}", secret, token);
+        var claims = getAllClaimsFromToken(token, secret);
+        final Date expiration = claims.getExpiration();
+
+        log.debug("expiration check...");
+        if (expiration.before(new Date())) {
+            log.debug("Token validation check error : EXPIRED_TOKEN");
+            log.debug("Token get date : {}", expiration);
+            throw new UnauthorizedException(ErrorCode.EXPIRED_TOKEN);
+        }
+
+        log.debug("return verificationResult");
+        return new VerificationResult(claims, token, requestUri, method, activeRole);
     }
 
     /**

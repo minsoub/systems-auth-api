@@ -20,7 +20,8 @@ public class AwsProperties {
 
   @Value("${cloud.aws.kms.endpoint}")
   private String kmsEndPoint;
-
+  @Value("${cloud.aws.sqs.endpoint}")
+  private String sqsEndPoint;
   @Value("${cloud.aws.param-store.prefix}")
   private String prefix;
 

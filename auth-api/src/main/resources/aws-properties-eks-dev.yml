@@ -29,3 +29,7 @@ cloud:
       auth-name: auth
       salt-name: salt
       iv-name: iv
+    sqs:
+      endpoint: https://sqs.ap-northeast-2.amazonaws.com
+      authorization:
+        queue-name: authorization_queue_dev.fifo

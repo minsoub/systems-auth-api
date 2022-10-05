@@ -14,10 +14,10 @@ import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.JwtGenerateUtil;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
-import com.bithumbsystems.auth.data.mongodb.client.entity.AdminAccount;
-import com.bithumbsystems.auth.data.mongodb.client.entity.RoleManagement;
-import com.bithumbsystems.auth.data.mongodb.client.service.AdminAccessDomainService;
-import com.bithumbsystems.auth.data.mongodb.client.service.RoleManagementDomainService;
+import com.bithumbsystems.auth.data.authentication.entity.AdminAccount;
+import com.bithumbsystems.auth.data.authentication.entity.RoleManagement;
+import com.bithumbsystems.auth.data.authentication.service.AdminAccessDomainService;
+import com.bithumbsystems.auth.data.authentication.service.RoleManagementDomainService;
 import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.TokenService;
 import java.util.Map;
@@ -79,7 +79,6 @@ public class AdminTokenService implements TokenService {
                   )).publishOn(Schedulers.boundedElastic()).doOnNext(tokenOtpInfo ->
                   authRedisService.saveToken(account.getEmail() + "::OTP",
                           tokenOtpInfo.toString())
-                      .log("result ->save success..")
                       .subscribe()).flatMap(Mono::just);
         })
         .switchIfEmpty(Mono.error(new UnauthorizedException(INVALID_TOKEN)));
@@ -116,7 +115,7 @@ public class AdminTokenService implements TokenService {
     return authRedisService.saveToken(request.getEmail(), tokenInfo.getAccessToken())
         .publishOn(Schedulers.boundedElastic())
         .map(result -> {
-          authRedisService.deleteToken(request.getEmail() + "::OTP").log("delete otp token")
+          authRedisService.deleteToken(request.getEmail() + "::OTP")
               .subscribe();
           return tokenInfo;
         });

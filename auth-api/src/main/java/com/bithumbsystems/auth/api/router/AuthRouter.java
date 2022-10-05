@@ -32,7 +32,7 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 
 @Configuration
 @RequiredArgsConstructor
-public class AuthTokenRouter {
+public class AuthRouter {
 
   private final AdminAuthHandler adminAuthHandler;
   private final UserAuthHandler userAuthHandler;

@@ -23,9 +23,9 @@ import com.bithumbsystems.auth.core.model.request.token.TokenGenerateRequest;
 import com.bithumbsystems.auth.core.model.response.SingleResponse;
 import com.bithumbsystems.auth.core.model.response.token.TokenResponse;
 import com.bithumbsystems.auth.core.util.AES256Util;
-import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
-import com.bithumbsystems.auth.data.mongodb.client.enums.UserStatus;
-import com.bithumbsystems.auth.data.mongodb.client.service.UserAccountDomainService;
+import com.bithumbsystems.auth.data.authentication.entity.UserAccount;
+import com.bithumbsystems.auth.data.authentication.enums.UserStatus;
+import com.bithumbsystems.auth.data.authentication.service.UserAccountDomainService;
 import com.bithumbsystems.auth.service.AuthService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.Duration;
@@ -226,8 +226,7 @@ public class UserService {
                 account.setLastLoginDate(LocalDateTime.now());
                 account.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
                 account.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
-                userAccountDomainService.save(account).then().log("result completed...")
-                    .subscribe();
+                userAccountDomainService.save(account).subscribe();
                   result.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), AES256Util.decryptAES(config.getKmsKey(), result.getEmail()))); // 이메일을 복호화 하여 통신구간 암호화 처리 후 fe로 내려준다.
                 return result;
               });

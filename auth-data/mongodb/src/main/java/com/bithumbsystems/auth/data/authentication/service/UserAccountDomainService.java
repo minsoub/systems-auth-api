@@ -1,7 +1,7 @@
-package com.bithumbsystems.auth.data.mongodb.client.service;
+package com.bithumbsystems.auth.data.authentication.service;
 
-import com.bithumbsystems.auth.data.mongodb.client.entity.UserAccount;
-import com.bithumbsystems.auth.data.mongodb.client.repository.UserAccountRepository;
+import com.bithumbsystems.auth.data.authentication.entity.UserAccount;
+import com.bithumbsystems.auth.data.authentication.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
