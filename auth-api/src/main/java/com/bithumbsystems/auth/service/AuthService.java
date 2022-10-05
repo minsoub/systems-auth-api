@@ -73,8 +73,8 @@ public class AuthService {
 
           return authRedisService.getToken(key)
               .filter(token -> token.equals(verificationResult.token))
-              .map(token -> ResultCode.SUCCESS.name()).switchIfEmpty(
-                  Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
+              .map(token -> ResultCode.SUCCESS.name())
+              .switchIfEmpty(Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
         });
   }
 
@@ -91,8 +91,7 @@ public class AuthService {
     final var roles = verificationResult.claims.get("ROLE");
     return Mono.just(roles)
         .filter(role -> !role.equals("USER"))
-        .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
-                .switchIfEmpty(extractProgram(verificationResult.activeRole))
+        .flatMap(role -> extractProgram(verificationResult.activeRole)
                 .flatMap(programString -> {
                   var hasResource = hasResource(programString, verificationResult.requestUri, verificationResult.method);
                   return Mono.just(hasResource);
