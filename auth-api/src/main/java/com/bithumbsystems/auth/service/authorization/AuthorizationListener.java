@@ -22,9 +22,9 @@ public class AuthorizationListener {
     log.debug("header: {} message: {}", header, message);
     log.debug("MessageGroupId: {}", header.get("MessageGroupId"));
     log.debug("message: {}", message);
-    var role = header.get("MessageGroupId");
-    authRedisService.delete("ROLE_" + role)
-        .then(authRedisService.saveAuthorization("ROLE_" + header.get("MessageGroupId"), message))
+    var role = "ROLE_" + header.get("MessageGroupId");
+    authRedisService.delete(role)
+        .then(authRedisService.saveAuthorization(header.get("MessageGroupId"), message))
         .subscribe();
   }
 }

@@ -119,7 +119,7 @@ public class AuthRedisService{
    * @return program list
    */
   public Mono<String> getRoleAuthorization(String roleManagementId) {
-    return getValue(roleManagementId);
+    return getValue("ROLE_" + roleManagementId);
   }
 
   /**
@@ -130,7 +130,6 @@ public class AuthRedisService{
    * @return mono mono
    */
   public Mono<Boolean> saveAuthorization(String roleManagementId, String programString) {
-    return save(roleManagementId, programString);
+    return save("ROLE_" + roleManagementId, programString);
   }
-
 }
