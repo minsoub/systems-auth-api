@@ -1,6 +1,6 @@
 package com.bithumbsystems.auth.service;
 
-import static com.bithumbsystems.auth.core.model.enums.ErrorCode.USER_ACCOUNT_DISABLE;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHORIZATION_FAIL;
 
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.DuplicatedLoginException;
@@ -18,6 +18,7 @@ import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -61,7 +62,7 @@ public class AuthService {
         .flatMap(this::tokenValidate)
         .flatMap(verificationResult -> checkAvailableResource(verificationResult).flatMap(isAccess -> {
           if(Boolean.FALSE.equals(isAccess)) {
-            return Mono.error(new UnauthorizedException(USER_ACCOUNT_DISABLE));
+            return Mono.error(new UnauthorizedException(AUTHORIZATION_FAIL));
           }
           return Mono.just(verificationResult);
         }))
@@ -85,6 +86,14 @@ public class AuthService {
         .anyMatch(pass -> pathMatcher.match(pass.getKey(), verificationResult.requestUri)
             && pass.getValue().equals(verificationResult.method)
         );
+
+    if(Objects.equals(verificationResult.getActiveRole(), "SUPER_USER") && (verificationResult.requestUri.equals("auth/mapping/init")
+        || verificationResult.requestUri.equals("auth/mapping")
+        || verificationResult.requestUri.equals("menu/mapping")
+        || verificationResult.requestUri.equals("menu/mapping/init"))) {
+      return Mono.just(true);
+    }
+
     if(isPass) {
       return Mono.just(true);
     }

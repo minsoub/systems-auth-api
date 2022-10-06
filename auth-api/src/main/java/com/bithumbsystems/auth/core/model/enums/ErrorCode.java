@@ -29,6 +29,8 @@ public enum ErrorCode {
   CAPTCHA_FAIL("Fail captcha verify"),
 
   AUTHENTICATION_FAIL("Fail Authentication"),
+  AUTHORIZATION_FAIL("Fail Authorization"),
+
 
   MAXIMUM_AUTH_ATTEMPTS_EXCEEDED("maximum authentication attempts exceeded"),
   MAXIMUM_AUTHENTICATION_FAIL("Maximum authentication fail."),
