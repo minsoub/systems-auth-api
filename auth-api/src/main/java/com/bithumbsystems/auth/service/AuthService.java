@@ -87,7 +87,7 @@ public class AuthService {
             && pass.getValue().equals(verificationResult.method)
         );
 
-    if(Objects.equals(verificationResult.getActiveRole(), "SUPER_USER") && (verificationResult.requestUri.equals("auth/mapping/init")
+    if(Objects.equals(verificationResult.getActiveRole(), "SUPER_ADMIN") && (verificationResult.requestUri.equals("auth/mapping/init")
         || verificationResult.requestUri.equals("auth/mapping")
         || verificationResult.requestUri.equals("menu/mapping")
         || verificationResult.requestUri.equals("menu/mapping/init"))) {
