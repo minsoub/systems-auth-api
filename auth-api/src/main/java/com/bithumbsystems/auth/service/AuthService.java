@@ -104,8 +104,9 @@ public class AuthService {
     final var roles = verificationResult.claims.get("ROLE");
     return Mono.just(roles)
         .filter(role -> !role.equals("USER"))
-        .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
-                .switchIfEmpty(extractProgram(verificationResult.activeRole))
+        .flatMap(role -> extractProgram(verificationResult.activeRole)
+//            authRedisService.getRoleAuthorization(verificationResult.activeRole)
+//                .switchIfEmpty(extractProgram(verificationResult.activeRole))
                 .flatMap(programString -> {
                   var hasResource = hasResource(programString, verificationResult.requestUri, verificationResult.method);
                   return Mono.just(hasResource);
@@ -119,7 +120,7 @@ public class AuthService {
         .collectList()
         .publishOn(Schedulers.boundedElastic())
         .map(programString -> {
-          authRedisService.saveAuthorization(roleManagementId, programString.toString()).subscribe();
+//          authRedisService.saveAuthorization(roleManagementId, programString.toString()).subscribe();
           return programString.toString();
         });
   }
