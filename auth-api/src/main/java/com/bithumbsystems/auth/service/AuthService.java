@@ -93,15 +93,16 @@ public class AuthService {
             && pass.getValue().equals(verificationResult.method)
         );
 
-    if(isPass || (Objects.equals(verificationResult.getActiveRole(), "SUPER-ADMIN")
-        && AUTH_INIT_PATH.contains(verificationResult.requestUri))) {
+    if(isPass || (Objects.equals(verificationResult.getActiveRole(), "SUPER_ADMIN")
+        && AUTH_INIT_PATH.contains(verificationResult.requestUri))
+    ) {
       return Mono.just(true);
     }
 
     final var roles = verificationResult.claims.get("ROLE");
     return Mono.just(roles)
         .filter(role -> !role.equals("USER"))
-        .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
+        .flatMap(role -> authRedisService.getRoleAuthorization("ROLE_" + verificationResult.activeRole)
                 .switchIfEmpty(extractProgram(verificationResult.activeRole))
                 .flatMap(programString -> {
                   var hasResource = hasResource(programString, verificationResult.requestUri, verificationResult.method);
@@ -116,7 +117,7 @@ public class AuthService {
         .collectList()
         .publishOn(Schedulers.boundedElastic())
         .map(programString -> {
-          authRedisService.saveAuthorization(roleManagementId, programString.toString()).subscribe();
+          authRedisService.saveAuthorization("ROLE_" + roleManagementId, programString.toString()).subscribe();
           return programString.toString();
         });
   }
