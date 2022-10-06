@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -57,6 +56,10 @@ public class AuthService {
       "/api/v1/auth/mapping",
       "/api/v1/menu/mapping",
       "/api/v1/menu/mapping/init");
+
+  private static final List<String> AUTH_INIT_ROLE = List.of(
+      "SUPER_ADMIN",
+      "SUPER-ADMIN");
   /**
    * Authorize
    *
@@ -93,8 +96,7 @@ public class AuthService {
             && pass.getValue().equals(verificationResult.method)
         );
 
-    if(isPass || (Objects.equals(verificationResult.getActiveRole(), "SUPER_ADMIN")
-        && AUTH_INIT_PATH.contains(verificationResult.requestUri))
+    if(isPass || (AUTH_INIT_ROLE.contains(verificationResult.activeRole) && AUTH_INIT_PATH.contains(verificationResult.requestUri))
     ) {
       return Mono.just(true);
     }
