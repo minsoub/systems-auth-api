@@ -17,6 +17,7 @@ import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,11 @@ public class AuthService {
       "/api/v1/role/{roleManagementId}/sites/{siteId}", "GET",
       "/api/v1/account", "GET");
 
+  private static final List<String> AUTH_INIT_PATH = List.of(
+      "/api/v1/auth/mapping/init",
+      "/api/v1/auth/mapping",
+      "/api/v1/menu/mapping",
+      "/api/v1/menu/mapping/init");
   /**
    * Authorize
    *
@@ -87,16 +93,11 @@ public class AuthService {
             && pass.getValue().equals(verificationResult.method)
         );
 
-    if(Objects.equals(verificationResult.getActiveRole(), "SUPER_ADMIN") && (verificationResult.requestUri.equals("auth/mapping/init")
-        || verificationResult.requestUri.equals("auth/mapping")
-        || verificationResult.requestUri.equals("menu/mapping")
-        || verificationResult.requestUri.equals("menu/mapping/init"))) {
+    if(isPass || (Objects.equals(verificationResult.getActiveRole(), "SUPER-ADMIN")
+        && AUTH_INIT_PATH.contains(verificationResult.requestUri))) {
       return Mono.just(true);
     }
 
-    if(isPass) {
-      return Mono.just(true);
-    }
     final var roles = verificationResult.claims.get("ROLE");
     return Mono.just(roles)
         .filter(role -> !role.equals("USER"))
