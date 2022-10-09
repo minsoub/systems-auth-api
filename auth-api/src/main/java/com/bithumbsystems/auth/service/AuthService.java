@@ -11,6 +11,7 @@ import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.authentication.entity.RsaCipherInfo;
+import com.bithumbsystems.auth.data.authentication.service.RoleManagementDomainService;
 import com.bithumbsystems.auth.data.authentication.service.RsaCipherInfoDomainService;
 import com.bithumbsystems.auth.data.authorization.service.AuthorizationService;
 import com.bithumbsystems.auth.data.redis.AuthRedisService;
@@ -43,6 +44,8 @@ public class AuthService {
 
   private final RsaCipherService rsaCipherService;
   private final AuthorizationService authorizationService;
+
+  private final RoleManagementDomainService roleManagementDomainService;
 
   private static final String RSA_CIPHER_KEY = "rsa-cipher-key";
   private static final Map<String, String> PASS_PATH = Map.of(
@@ -109,12 +112,12 @@ public class AuthService {
 
     return Mono.just(roles)
         .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
-                .switchIfEmpty(extractProgram(verificationResult.activeRole))
-                .flatMap(programString -> {
-                  var hasResource = hasResource(programString, verificationResult.requestUri,
-                      verificationResult.method);
-                  return Mono.just(hasResource);
-                })
+            .switchIfEmpty(extractProgram(verificationResult.activeRole))
+            .flatMap(programString -> {
+              var hasResource = hasResource(programString, verificationResult.requestUri,
+                  verificationResult.method);
+              return Mono.just(hasResource);
+            })
         ).switchIfEmpty(Mono.just(true));
   }
 
@@ -127,7 +130,8 @@ public class AuthService {
           log.info("roleManagementId: " + roleManagementId);
           log.info("programString: " + programString.toString());
 
-          authRedisService.saveAuthorization(roleManagementId, programString.toString()).subscribe();
+          authRedisService.saveAuthorization(roleManagementId, programString.toString())
+              .subscribe();
           return programString.toString();
         });
   }
@@ -177,5 +181,16 @@ public class AuthService {
   public Mono<String> getRsaPrivateKey() {
     return rsaCipherInfoDomainService.findById(RSA_CIPHER_KEY)
         .map(RsaCipherInfo::getServerPrivateKey);
+  }
+
+  public Mono<List<String>> redisInit() {
+    return roleManagementDomainService.findAll()
+        .publishOn(Schedulers.boundedElastic())
+        .flatMap(roleManagement -> {
+          var roleLegacy = authRedisService.delete(roleManagement.getId());
+          var role = authRedisService.delete("ROLE_" + roleManagement.getId());
+          Mono.zip(roleLegacy, role).subscribe();
+          return Mono.just(roleManagement.getId());
+        }).collectList();
   }
 }

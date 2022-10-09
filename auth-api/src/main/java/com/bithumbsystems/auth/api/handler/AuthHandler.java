@@ -43,4 +43,8 @@ public class AuthHandler {
             .build())
         .flatMap(res -> ServerResponse.ok().bodyValue(res));
   }
+
+  public Mono<ServerResponse> redisInit(ServerRequest serverRequest) {
+    return ServerResponse.ok().bodyValue(authService.redisInit());
+  }
 }

@@ -387,6 +387,7 @@ public class AuthRouter {
     })
     public RouterFunction route() {
         return RouterFunctions.route()
+            .GET("/api/v1/adm/redis/init", authHandler::redisInit)
             .GET("/api/v1/adm/init", adminAuthHandler::initKey)
             .PUT("/api/v1/adm/token", adminAuthHandler::refreshToken)
             .POST("/api/v1/adm/login", adminAuthHandler::login)
