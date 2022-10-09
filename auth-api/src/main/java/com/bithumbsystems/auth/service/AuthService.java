@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -183,14 +184,12 @@ public class AuthService {
         .map(RsaCipherInfo::getServerPrivateKey);
   }
 
-  public Mono<List<String>> redisInit() {
+  public Disposable redisInit() {
     return roleManagementDomainService.findAll()
         .publishOn(Schedulers.boundedElastic())
-        .flatMap(roleManagement -> {
-          var roleLegacy = authRedisService.delete(roleManagement.getId());
-          var role = authRedisService.delete("ROLE_" + roleManagement.getId());
-          Mono.zip(roleLegacy, role).subscribe();
-          return Mono.just(roleManagement.getId());
-        }).collectList();
+        .doOnNext(roleManagement -> {
+          authRedisService.delete(roleManagement.getId()).subscribe();
+          authRedisService.delete("ROLE_" + roleManagement.getId()).subscribe();
+        }).subscribe();
   }
 }
