@@ -2,6 +2,7 @@ package com.bithumbsystems.auth.data.redis;
 
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -10,6 +11,7 @@ import reactor.core.publisher.Mono;
  * The type Auth redis service.
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuthRedisService{
 
@@ -119,7 +121,9 @@ public class AuthRedisService{
    * @return program list
    */
   public Mono<String> getRoleAuthorization(String roleManagementId) {
-    return getValue("ROLE_" + roleManagementId);
+    var role = getValue("ROLE_" + roleManagementId);
+    log.info("getRoleAuthorization in Redis: " + roleManagementId);
+    return role;
   }
 
   /**
@@ -130,6 +134,9 @@ public class AuthRedisService{
    * @return mono mono
    */
   public Mono<Boolean> saveAuthorization(String roleManagementId, String programString) {
-    return save("ROLE_" + roleManagementId, programString);
+    log.info("saveAuthorization in Redis: " + roleManagementId);
+    return delete("ROLE_" + roleManagementId).flatMap(v ->
+        saveExpiration("ROLE_" + roleManagementId, programString, 1800)
+    );
   }
 }

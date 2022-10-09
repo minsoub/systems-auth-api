@@ -24,7 +24,7 @@ public class AuthorizationListener {
     log.debug("message: {}", message);
     var role = "ROLE_" + header.get("MessageGroupId");
     authRedisService.delete(role)
-        .then(authRedisService.saveAuthorization(header.get("MessageGroupId"), message))
+        .then(authRedisService.saveAuthorization(role, message))
         .subscribe();
   }
 }

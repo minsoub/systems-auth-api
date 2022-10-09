@@ -28,14 +28,14 @@ management:
 
 logging:
   level:
-    root: ${auth.api.logging.level.root:DEBUG}
+    root: ${auth.api.logging.level.root:INFO}
     org.springframework.data.convert.CustomConversions: ERROR
     org:
       springframework:
         data:
           mongodb:
             core:
-              MongoTemplate: ${auth.api.logging.level.mongo:DEBUG}
+              MongoTemplate: ${auth.api.logging.level.mongo:INFO}
     com:
       amazonaws:
         util:

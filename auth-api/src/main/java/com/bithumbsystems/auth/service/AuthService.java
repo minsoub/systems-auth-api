@@ -34,6 +34,7 @@ import reactor.core.scheduler.Schedulers;
 @Slf4j
 @RequiredArgsConstructor
 public class AuthService {
+
   private final JwtProperties jwtProperties;
 
   private final AuthRedisService authRedisService;
@@ -60,6 +61,7 @@ public class AuthService {
   private static final List<String> AUTH_INIT_ROLE = List.of(
       "SUPER_ADMIN",
       "SUPER-ADMIN");
+
   /**
    * Authorize
    *
@@ -69,12 +71,13 @@ public class AuthService {
   public Mono<String> authorize(Mono<TokenValidationRequest> tokenRequest) {
     return tokenRequest
         .flatMap(this::tokenValidate)
-        .flatMap(verificationResult -> checkAvailableResource(verificationResult).flatMap(isAccess -> {
-          if(Boolean.FALSE.equals(isAccess)) {
-            return Mono.error(new UnauthorizedException(AUTHORIZATION_FAIL));
-          }
-          return Mono.just(verificationResult);
-        }))
+        .flatMap(verificationResult -> checkAvailableResource(verificationResult)
+            .flatMap(isAccess -> {
+              if (Boolean.FALSE.equals(isAccess)) {
+                return Mono.error(new UnauthorizedException(AUTHORIZATION_FAIL));
+              }
+              return Mono.just(verificationResult);
+            }))
         .flatMap(verificationResult -> {
           var key = verificationResult.claims.getIssuer();
           if (verificationResult.claims.get("ROLE").equals("USER")) {
@@ -84,31 +87,32 @@ public class AuthService {
           return authRedisService.getToken(key)
               .filter(token -> token.equals(verificationResult.token))
               .map(token -> ResultCode.SUCCESS.name())
-              .switchIfEmpty(Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
+              .switchIfEmpty(
+                  Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
         });
   }
 
   private Mono<Boolean> checkAvailableResource(VerificationResult verificationResult) {
     AntPathMatcher pathMatcher = new AntPathMatcher();
+    final var roles = verificationResult.claims.get("ROLE");
 
     var isPass = PASS_PATH.entrySet().stream()
         .anyMatch(pass -> pathMatcher.match(pass.getKey(), verificationResult.requestUri)
             && pass.getValue().equals(verificationResult.method)
         );
 
-    if(isPass || (AUTH_INIT_ROLE.contains(verificationResult.activeRole) && AUTH_INIT_PATH.contains(verificationResult.requestUri))
+    if (isPass || roles.equals("USER") || (AUTH_INIT_ROLE.contains(verificationResult.activeRole)
+        && AUTH_INIT_PATH.contains(verificationResult.requestUri))
     ) {
       return Mono.just(true);
     }
 
-    final var roles = verificationResult.claims.get("ROLE");
     return Mono.just(roles)
-        .filter(role -> !role.equals("USER"))
-        .flatMap(role -> extractProgram(verificationResult.activeRole)
-//            authRedisService.getRoleAuthorization(verificationResult.activeRole)
-//                .switchIfEmpty(extractProgram(verificationResult.activeRole))
+        .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
+                .switchIfEmpty(extractProgram(verificationResult.activeRole))
                 .flatMap(programString -> {
-                  var hasResource = hasResource(programString, verificationResult.requestUri, verificationResult.method);
+                  var hasResource = hasResource(programString, verificationResult.requestUri,
+                      verificationResult.method);
                   return Mono.just(hasResource);
                 })
         ).switchIfEmpty(Mono.just(true));
@@ -116,11 +120,14 @@ public class AuthService {
 
   private Mono<String> extractProgram(String roleManagementId) {
     return authorizationService.findRolePrograms(roleManagementId)
-        .flatMap(program -> Mono.just(program.getActionMethod() +"|" + program.getActionUrl()))
+        .flatMap(program -> Mono.just(program.getActionMethod() + "|" + program.getActionUrl()))
         .collectList()
         .publishOn(Schedulers.boundedElastic())
         .map(programString -> {
-//          authRedisService.saveAuthorization(roleManagementId, programString.toString()).subscribe();
+          log.info("roleManagementId: " + roleManagementId);
+          log.info("programString: " + programString.toString());
+
+          authRedisService.saveAuthorization(roleManagementId, programString.toString()).subscribe();
           return programString.toString();
         });
   }
@@ -145,7 +152,8 @@ public class AuthService {
    */
   private Mono<VerificationResult> tokenValidate(TokenValidationRequest tokenValidationRequest) {
     return JwtVerifyUtil.check(tokenValidationRequest.getToken(), jwtProperties.getSecret(),
-        tokenValidationRequest.getRequestUri(), tokenValidationRequest.getMethod().name(), tokenValidationRequest.getActiveRole());
+        tokenValidationRequest.getRequestUri(), tokenValidationRequest.getMethod().name(),
+        tokenValidationRequest.getActiveRole());
   }
 
   @Transactional
