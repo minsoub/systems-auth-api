@@ -121,9 +121,7 @@ public class AuthRedisService{
    * @return program list
    */
   public Mono<String> getRoleAuthorization(String roleManagementId) {
-    var role = getValue("ROLE_" + roleManagementId);
-    log.info("getRoleAuthorization in Redis: " + roleManagementId);
-    return role;
+    return getValue("ROLE_" + roleManagementId).map(value -> value);
   }
 
   /**
@@ -134,9 +132,8 @@ public class AuthRedisService{
    * @return mono mono
    */
   public Mono<Boolean> saveAuthorization(String roleManagementId, String programString) {
-    log.info("saveAuthorization in Redis: " + roleManagementId);
-    return delete("ROLE_" + roleManagementId).flatMap(v ->
-        saveExpiration("ROLE_" + roleManagementId, programString, 1800)
+    return delete("ROLE_" + roleManagementId).then(
+        redisTemplate.opsForValue().set("ROLE_" + roleManagementId, programString, Duration.ofSeconds(1800))
     );
   }
 }
