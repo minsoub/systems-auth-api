@@ -128,8 +128,8 @@ public class AuthService {
         .collectList()
         .publishOn(Schedulers.boundedElastic())
         .map(programString -> {
-          log.info("roleManagementId: " + roleManagementId);
-          log.info("programString: " + programString.toString());
+          log.debug("roleManagementId: " + roleManagementId);
+          log.debug("programString: " + programString.toString());
 
           authRedisService.saveAuthorization(roleManagementId, programString.toString())
               .subscribe();
