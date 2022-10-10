@@ -4,7 +4,7 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHORIZATION_F
 
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.DuplicatedLoginException;
-import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
+import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedResourceException;
 import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
@@ -78,7 +78,7 @@ public class AuthService {
         .flatMap(verificationResult -> checkAvailableResource(verificationResult)
             .flatMap(isAccess -> {
               if (Boolean.FALSE.equals(isAccess)) {
-                return Mono.error(new UnauthorizedException(AUTHORIZATION_FAIL));
+                return Mono.error(new UnauthorizedResourceException(AUTHORIZATION_FAIL));
               }
               return Mono.just(verificationResult);
             }))
