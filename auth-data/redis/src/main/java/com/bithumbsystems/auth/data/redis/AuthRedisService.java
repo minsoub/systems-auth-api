@@ -121,7 +121,7 @@ public class AuthRedisService{
    * @return program list
    */
   public Mono<String> getRoleAuthorization(String roleManagementId) {
-    return getValue("ROLE_" + roleManagementId).map(value -> value);
+    return getValue("ROLE_" + roleManagementId);
   }
 
   /**

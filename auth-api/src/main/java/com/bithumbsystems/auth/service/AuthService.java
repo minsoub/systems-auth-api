@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.StringUtils;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -115,11 +116,14 @@ public class AuthService {
         .flatMap(role -> authRedisService.getRoleAuthorization(verificationResult.activeRole)
             .switchIfEmpty(extractProgram(verificationResult.activeRole))
             .flatMap(programString -> {
+              if(!StringUtils.hasLength(programString) || "[]".equals(programString)) {
+                return Mono.just(false);
+              }
               var hasResource = hasResource(programString, verificationResult.requestUri,
                   verificationResult.method);
               return Mono.just(hasResource);
             })
-        ).switchIfEmpty(Mono.just(true));
+        ).switchIfEmpty(Mono.just(false));
   }
 
   private Mono<String> extractProgram(String roleManagementId) {
@@ -128,13 +132,10 @@ public class AuthService {
         .collectList()
         .publishOn(Schedulers.boundedElastic())
         .map(programString -> {
-          log.debug("roleManagementId: " + roleManagementId);
-          log.debug("programString: " + programString.toString());
-
           authRedisService.saveAuthorization(roleManagementId, programString.toString())
               .subscribe();
           return programString.toString();
-        });
+        }).defaultIfEmpty("");
   }
 
   private boolean hasResource(String programString, String requestUri, String requestMethod) {

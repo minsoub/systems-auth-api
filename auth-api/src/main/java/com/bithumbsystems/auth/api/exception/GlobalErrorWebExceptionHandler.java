@@ -1,7 +1,8 @@
 package com.bithumbsystems.auth.api.exception;
 
+import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import java.util.Map;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
@@ -20,7 +21,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
-@Log4j2
+@Slf4j
 @Component
 @Order(-2)
 public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHandler {
@@ -45,8 +46,14 @@ public class GlobalErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
                 ErrorAttributeOptions.defaults());
 
         log.debug("Error data => {}", errorPropertiesMap);
-        return ServerResponse.status(HttpStatus.BAD_REQUEST)
+        if(errorPropertiesMap.get("message").equals(ErrorCode.AUTHORIZATION_FAIL.name())) {
+            return ServerResponse.status(HttpStatus.FORBIDDEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(errorPropertiesMap));
+        } else {
+            return ServerResponse.badRequest()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(errorPropertiesMap));
+        }
     }
 }
