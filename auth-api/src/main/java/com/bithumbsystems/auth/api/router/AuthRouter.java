@@ -311,32 +311,32 @@ public class AuthRouter {
                             )
                     )
             ),
-            @RouterOperation(
-                    path = "/api/v1/user/join",
-                    produces = {
-                            MediaType.APPLICATION_JSON_VALUE
-                    },
-                    method = RequestMethod.POST,
-                    beanClass = UserAuthHandler.class,
-                    beanMethod = "userJoin",
-                    operation = @Operation(
-                            operationId = "userJoin",
-                            responses = {
-                                    @ApiResponse(
-                                            responseCode = "200",
-                                            description = "successful operation",
-                                            content = @Content(schema = @Schema(
-                                                    implementation = SingleResponse.class
-                                            ))
-                                    )
-                            },
-                            requestBody = @RequestBody(
-                                    content = @Content(schema = @Schema(
-                                            implementation = UserJoinRequest.class
-                                    ))
-                            )
-                    )
-            ),
+//            @RouterOperation(
+//                    path = "/api/v1/user/join",
+//                    produces = {
+//                            MediaType.APPLICATION_JSON_VALUE
+//                    },
+//                    method = RequestMethod.POST,
+//                    beanClass = UserAuthHandler.class,
+//                    beanMethod = "userJoin",
+//                    operation = @Operation(
+//                            operationId = "userJoin",
+//                            responses = {
+//                                    @ApiResponse(
+//                                            responseCode = "200",
+//                                            description = "successful operation",
+//                                            content = @Content(schema = @Schema(
+//                                                    implementation = SingleResponse.class
+//                                            ))
+//                                    )
+//                            },
+//                            requestBody = @RequestBody(
+//                                    content = @Content(schema = @Schema(
+//                                            implementation = UserJoinRequest.class
+//                                    ))
+//                            )
+//                    )
+//            ),
             @RouterOperation(
                 path = "/api/v1/user/public-key",
                 produces = {
@@ -401,7 +401,7 @@ public class AuthRouter {
             .PUT("/api/v1/user/token", userAuthHandler::refreshToken)
             .POST("/api/v1/user/login", userAuthHandler::userLogin)
             .POST("/api/v1/user/captcha-login", userAuthHandler::userCaptchaLogin)
-            .POST("/api/v1/user/join", userAuthHandler::userJoin)
+//            .POST("/api/v1/user/join", userAuthHandler::userJoin)
             .GET("/api/v1/user/public-key", authHandler::publicKey)
             .POST("/api/v1/authorize", authHandler::authorize)
             .POST("/api/v1/user/otp/login", userAuthHandler::otpLogin)
