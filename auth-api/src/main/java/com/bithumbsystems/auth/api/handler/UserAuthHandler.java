@@ -108,17 +108,17 @@ public class UserAuthHandler {
         .body(userService.userCaptchaLogin(userCaptchaRequest), TokenResponse.class);
   }
 
-  /**
-   * 사용자 가입을 처리한다.
-   *
-   * @param request the request
-   * @return mono mono
-   */
-  public Mono<ServerResponse> userJoin(ServerRequest request) {
-    Mono<UserJoinRequest> joinRequest = request.bodyToMono(UserJoinRequest.class);
-
-    return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
-  }
+//  /**
+//   * 사용자 가입을 처리한다.
+//   *
+//   * @param request the request
+//   * @return mono mono
+//   */
+//  public Mono<ServerResponse> userJoin(ServerRequest request) {
+//    Mono<UserJoinRequest> joinRequest = request.bodyToMono(UserJoinRequest.class);
+//
+//    return ServerResponse.ok().body(userService.join(joinRequest), SingleResponse.class);
+//  }
   public Mono<ServerResponse> otpLogin(ServerRequest request) {
     Mono<OtpRequest> otpRequest = request.bodyToMono(OtpRequest.class);
     return ServerResponse.ok().body(userService.otpLogin(otpRequest), TokenInfo.class);
