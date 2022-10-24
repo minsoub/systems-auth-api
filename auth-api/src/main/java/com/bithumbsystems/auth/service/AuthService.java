@@ -55,6 +55,7 @@ public class AuthService {
       "/api/v1/authorize", "POST",
       "/api/v1/role/{roleManagementId}", "GET",
       "/api/v1/role/{roleManagementId}/sites/{siteId}", "GET",
+      "/api/v1/mng/lrc/lrcmanagment/project/foundation-check/{id}", "GET",
       "/api/v1/account", "GET");
 
   private static final List<String> AUTH_INIT_PATH = List.of(
