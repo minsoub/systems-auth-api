@@ -20,7 +20,7 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
     @Override
     public Map<String, Object> getErrorAttributes(ServerRequest request,
                                                   ErrorAttributeOptions options) {
-        Map<String, Object> map = super.getErrorAttributes(request, ErrorAttributeOptions.of(Include.BINDING_ERRORS, Include.MESSAGE, Include.EXCEPTION));
+        Map<String, Object> map = super.getErrorAttributes(request, ErrorAttributeOptions.of(Include.BINDING_ERRORS, Include.MESSAGE));
         map.forEach((key, value) -> log.error("{} {}", key, value));
         return map;
     }

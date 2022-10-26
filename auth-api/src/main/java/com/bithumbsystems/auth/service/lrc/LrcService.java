@@ -102,60 +102,60 @@ public class LrcService {
                 })));
   }
 
-  /**
-   * 사용자 가입을 처리한다.
-   *
-   * @param joinRequest the join request
-   * @return mono mono
-   */
-  public Mono<SingleResponse> join(Mono<UserJoinRequest> joinRequest) {
-    log.debug("join called...");
-    return joinRequest.flatMap(req -> {
-      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), config.getSaltKey(), config.getIvKey());
-      return Mono.defer(() -> userAccountDomainService.findByEmail(encryptEmail)
-          .map(result -> {
-            log.debug("join method fail result => {}", result);
-            ErrorData error = new ErrorData(EXISTED_USER);
-            return new SingleResponse(error, ResultCode.ERROR);
-          })
-          .switchIfEmpty(Mono.defer(() -> userRegister(req))));
-    });
-  }
-
-  /**
-   * 사용자 정보를 신규 등록한다.
-   *
-   * @param req
-   * @return
-   */
-  private Mono<SingleResponse> userRegister(UserJoinRequest req) {
-    String email = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), config.getSaltKey(), config.getIvKey());
-    String name = AES256Util.encryptAES(config.getKmsKey(), req.getName(), config.getSaltKey(), config.getIvKey());
-    String phone = AES256Util.encryptAES(config.getKmsKey(), req.getPhone(), config.getSaltKey(), config.getIvKey());
-
-    log.debug("userRegister email => {}", email);
-    log.debug("userRegister name => {}", name);
-    log.debug("userRegister phone => {}", phone);
-
-      LrcAccount user = LrcAccount.builder()
-        .email(email)  // config.encrypt(req.getEmail()))
-        .name(name)    // config.encrypt(req.getName()))
-        .password(passwordEncoder.encode(req.getPassword()))
-        .phone(phone)  // config.encrypt(req.getPhone()))
-        .snsId(req.getSnsId())
-        .status(UserStatus.NORMAL)
-        .loginFailCount(0)
-        .createDate(LocalDateTime.now())
-        .createAccountId("admin")
-        .build();
-
-    log.debug("user account data : {}", user);
-    return userAccountDomainService.save(user)
-        .map(r -> {
-          log.debug("success => {}", r);
-          return new SingleResponse("가입을 완료하였습니다!!!");
-        });
-  }
+//  /**
+//   * 사용자 가입을 처리한다.
+//   *
+//   * @param joinRequest the join request
+//   * @return mono mono
+//   */
+//  public Mono<SingleResponse> join(Mono<UserJoinRequest> joinRequest) {
+//    log.debug("join called...");
+//    return joinRequest.flatMap(req -> {
+//      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), config.getSaltKey(), config.getIvKey());
+//      return Mono.defer(() -> userAccountDomainService.findByEmail(encryptEmail)
+//          .map(result -> {
+//            log.debug("join method fail result => {}", result);
+//            ErrorData error = new ErrorData(EXISTED_USER);
+//            return new SingleResponse(error, ResultCode.ERROR);
+//          })
+//          .switchIfEmpty(Mono.defer(() -> userRegister(req))));
+//    });
+//  }
+//
+//  /**
+//   * 사용자 정보를 신규 등록한다.
+//   *
+//   * @param req
+//   * @return
+//   */
+//  private Mono<SingleResponse> userRegister(UserJoinRequest req) {
+//    String email = AES256Util.encryptAES(config.getKmsKey(), req.getEmail(), config.getSaltKey(), config.getIvKey());
+//    String name = AES256Util.encryptAES(config.getKmsKey(), req.getName(), config.getSaltKey(), config.getIvKey());
+//    String phone = AES256Util.encryptAES(config.getKmsKey(), req.getPhone(), config.getSaltKey(), config.getIvKey());
+//
+//    log.debug("userRegister email => {}", email);
+//    log.debug("userRegister name => {}", name);
+//    log.debug("userRegister phone => {}", phone);
+//
+//      LrcAccount user = LrcAccount.builder()
+//        .email(email)  // config.encrypt(req.getEmail()))
+//        .name(name)    // config.encrypt(req.getName()))
+//        .password(passwordEncoder.encode(req.getPassword()))
+//        .phone(phone)  // config.encrypt(req.getPhone()))
+//        .snsId(req.getSnsId())
+//        .status(UserStatus.NORMAL)
+//        .loginFailCount(0)
+//        .createDate(LocalDateTime.now())
+//        .createAccountId("admin")
+//        .build();
+//
+//    log.debug("user account data : {}", user);
+//    return userAccountDomainService.save(user)
+//        .map(r -> {
+//          log.debug("success => {}", r);
+//          return new SingleResponse("가입을 완료하였습니다!!!");
+//        });
+//  }
 
     /**
      * 1차 인증 후 사용자 Otp 생성
