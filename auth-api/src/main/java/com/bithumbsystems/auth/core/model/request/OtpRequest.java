@@ -15,4 +15,5 @@ public class OtpRequest {
     String siteId;
     String token;
     Status status;
+    String email;
 }

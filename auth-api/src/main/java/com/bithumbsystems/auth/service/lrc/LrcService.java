@@ -229,8 +229,6 @@ public class LrcService {
                             tokenOtpInfo.setName("");
                         }
                         tokenOtpInfo.setIsCode(StringUtils.hasLength(account.getOtpSecretKey()));
-                        OtpResponse otpResponse = OtpUtil.generate(decryptEmail, config.getCryptoKey(), account.getOtpSecretKey());
-                        tokenOtpInfo.setValidData(otpResponse.getEncodeKey());
                         String status = account.getStatus().name();
                         log.debug("status:{}", status);
                         if((Status.NORMAL.toString()).equals(status)){
