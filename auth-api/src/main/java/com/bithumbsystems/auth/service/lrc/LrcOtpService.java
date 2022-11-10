@@ -4,7 +4,6 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUM
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
-import com.bithumbsystems.auth.api.config.properties.AwsProperties;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.LrcUnauthorizedException;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
