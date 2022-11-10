@@ -4,6 +4,7 @@ import static com.bithumbsystems.auth.core.model.enums.ErrorCode.INVALID_OTP_NUM
 
 import com.bithumbsystems.auth.api.config.AwsConfig;
 import com.bithumbsystems.auth.api.config.constant.SecurityConstant;
+import com.bithumbsystems.auth.api.config.properties.AwsProperties;
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.LrcUnauthorizedException;
 import com.bithumbsystems.auth.api.exception.authorization.UnauthorizedException;
@@ -28,6 +29,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+
+import com.bithumbsystems.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -38,6 +41,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import com.bithumbsystems.auth.service.cipher.RsaCipherService;
 
 /**
  * The type Otp service.
@@ -53,6 +57,8 @@ public class LrcOtpService {
   private final LrcTokenService userTokenService;
   private final LrcAccountDomainService userAccountDomainService;
   private static final String MAIL_VALID_TIME_FORMAT = "yyyy-MM-dd HH:mm";
+  private final AuthService authService;
+  private final RsaCipherService rsaCipherService;
   /**
    * OTP 처리 - 2차 처리완료 후 토큰정보를 리턴한다.
    *
@@ -63,49 +69,51 @@ public class LrcOtpService {
     // Token Validation check and otp no check
     log.debug("otp validation check start => {}", request);
 
-      String encryptEmail = AES256Util.encryptAES(config.getKmsKey(), request.getEmail(), config.getSaltKey(), config.getIvKey());
-      return userAccountDomainService.findByEmail(encryptEmail)
-              .flatMap(account -> {
-                  String decryptEmail = AES256Util.decryptAES(config.getKmsKey(), account.getEmail());
-                  OtpResponse otpResponse = OtpUtil.generate(decryptEmail, config.getCryptoKey(), account.getOtpSecretKey());
-                  String encodeKey = AES256Util.decryptAES(config.getCryptoKey(), otpResponse.getEncodeKey());
-                  return checkExpiredOTP(request, encodeKey)
-                          .then(
-                                  JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
-                                          .flatMap(result -> {
-                                              // success token validation check
-                                              // otp validation check
-                                              log.debug("jwt validation check completed : {}", result);
-                                              if (OtpUtil.otpCheckCode(request.getOtpNo(), encodeKey)) {
-                                                  // 2차 토큰 생성
-                                                  log.debug("2차 토큰 생성");
-                                                  String accountId = result.claims.get("account_id").toString();
-                                                  return userAccountDomainService.findById(accountId).flatMap(userAccount ->
-                                                          userTokenService.generateToken(TokenGenerateRequest.builder()
-                                                                  .accountId(userAccount.getId())
-                                                                  .roles("USER")
-                                                                  .siteId(SecurityConstant.LRC_SITE_ID)
-                                                                  .email(AES256Util.decryptAES(config.getKmsKey(), userAccount.getEmail()))
-                                                                  .claims(Map.of("ROLE", "USER", "account_id", userAccount.getId()))
-                                                                  .build())
-                                                          .publishOn(Schedulers.boundedElastic())
-                                                          .map(tokenResponse -> {
-                                                              log.debug("generateToken => {}", tokenResponse);
-                                                              userAccount.setLastLoginDate(LocalDateTime.now());
-                                                              userAccount.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
-                                                              userAccount.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
-                                                              userAccountDomainService.save(userAccount).then().log("result completed...")
-                                                                      .subscribe();
-                                                              tokenResponse.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), tokenResponse.getEmail()));
-                                                              return tokenResponse;
-                                                          }));
-                                              } else {
-                                                  log.debug("OTP check error");
-                                                  return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
-                                              }
-                                          })
-                          );
-              });
+    return authService.getRsaPrivateKey()
+            .flatMap(privateKey -> {
+                String decryptEmail = rsaCipherService.decryptRSA(request.getEmail(), privateKey);
+                return userAccountDomainService.findByEmail(AES256Util.encryptAES(config.getKmsKey(), decryptEmail, config.getSaltKey(), config.getIvKey()))
+                        .flatMap(account -> {
+                            OtpResponse otpResponse = OtpUtil.generate(decryptEmail, config.getCryptoKey(), account.getOtpSecretKey());
+                            String encodeKey = AES256Util.decryptAES(config.getCryptoKey(), otpResponse.getEncodeKey());
+                            return checkExpiredOTP(request, encodeKey)
+                                    .then(
+                                            JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
+                                                    .flatMap(result -> {
+                                                        // success token validation check
+                                                        // otp validation check
+                                                        log.debug("jwt validation check completed : {}", result);
+                                                        if (OtpUtil.otpCheckCode(request.getOtpNo(), encodeKey)) {
+                                                          // 2차 토큰 생성
+                                                          log.debug("2차 토큰 생성");
+                                                          String accountId = result.claims.get("account_id").toString();
+                                                          return userAccountDomainService.findById(accountId).flatMap(userAccount ->
+                                                                  userTokenService.generateToken(TokenGenerateRequest.builder()
+                                                                                  .accountId(userAccount.getId())
+                                                                                  .roles("USER")
+                                                                                  .siteId(SecurityConstant.LRC_SITE_ID)
+                                                                                  .email(AES256Util.decryptAES(config.getKmsKey(), userAccount.getEmail()))
+                                                                                  .claims(Map.of("ROLE", "USER", "account_id", userAccount.getId()))
+                                                                                  .build())
+                                                                          .publishOn(Schedulers.boundedElastic())
+                                                                          .map(tokenResponse -> {
+                                                                              log.debug("generateToken => {}", tokenResponse);
+                                                                              userAccount.setLastLoginDate(LocalDateTime.now());
+                                                                              userAccount.setLoginFailCount(0);   // 로그인 성공시 로그인 실패횟수 초기화
+                                                                              userAccount.setLoginFailDate(null); // 로그인 성공시 로그인 실패시간 초기화
+                                                                              userAccountDomainService.save(userAccount).then().log("result completed...")
+                                                                                      .subscribe();
+                                                                              tokenResponse.setEmail(AES256Util.encryptAES(config.getLrcCryptoKey(), tokenResponse.getEmail()));
+                                                                              return tokenResponse;
+                                                                          }));
+                                                        } else {
+                                                          log.debug("OTP check error");
+                                                          return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
+                                                        }
+                                                    })
+                                    );
+                        });
+            });
   }
 
     public Mono<LrcAccount> otpValidation2(OtpRequest request) {
