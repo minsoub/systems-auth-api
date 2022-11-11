@@ -1,0 +1,35 @@
+cloud:
+  aws:
+    credentials:
+      profile-name: ${aws.default.profile:eks-prod}
+      instanceProfile: true
+    stack:
+      auto: ${auth.aws.stack.auto:false}
+    ssm:
+      endpoint: https://ssm.ap-northeast-2.amazonaws.com
+    ses:
+      endpoint: vpce-0268e56a68fbd82e0-ikatyjh3.email-smtp.ap-northeast-2.vpce.amazonaws.com
+      port: 2587
+    kms:
+      endpoint: https://kms.ap-northeast-2.amazonaws.com
+    region:
+      static: ${auth.aws.region:ap-northeast-2}
+      auto: ${auth.aws.region.auto:false}
+    param-store:
+      enabled: true
+      fail-fast: true
+      prefix: /smartadmin
+      doc-name: docdb
+      redis-name: redis
+      kms-name: kms
+      crypto-name: crypto
+      lrc-name: lrc
+      cpc-name: cpc
+      message-name: message
+      auth-name: auth
+      salt-name: salt
+      iv-name: iv
+    sqs:
+      endpoint: https://sqs.ap-northeast-2.amazonaws.com
+      authorization:
+        queue-name: authorization_queue_prod.fifo
