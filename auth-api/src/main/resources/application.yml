@@ -114,6 +114,24 @@ google:
 ---
 spring:
   config:
+    import: classpath:aws-properties-eks-prod.yml, classpath:springdoc.yml
+    activate:
+      on-profile: eks-prod
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml
+mail:
+  logo-url: https://smartadmin.bithumbsystems.com/images/maillogo.png
+  login-url: https://smartadmin.bithumbsystems.com
+
+google:
+  recaptcha:
+    verify:
+      url:  http://k8s-systemsp-systemsm-44af8aebfc-fdd7585d563eeb6b.elb.ap-northeast-2.amazonaws.com/recaptcha/api/siteverify
+    secret:
+      lrc: 6Lef7JcfAAAAAKFN2Wta__cXutJ4wCMeCadxl3Eq
+---
+spring:
+  config:
     import: classpath:aws-properties-qa.yml, classpath:springdoc.yml
     activate:
       on-profile: qa
