@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile;
 import redis.embedded.RedisServer;
 
 @Configuration
-@Profile("local")
+@Profile("local|localstack")
 public class EmbeddedRedisConfig {
 
   @Value("${spring.redis.port}")

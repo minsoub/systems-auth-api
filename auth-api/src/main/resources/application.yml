@@ -78,6 +78,32 @@ google:
 ---
 spring:
   config:
+    import: classpath:aws-properties-localstack.yml, classpath:springdoc.yml
+    activate:
+      on-profile: localstack
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: test
+  redis:
+    host: ${auth.redis.host:localhost}
+    port: ${auth.redis.port:6379}
+logging:
+  config: classpath:logback-spring-local.xml
+mail:
+  logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
+  login-url: http://localhost:3000/
+
+google:
+  recaptcha:
+    verify:
+      url: http://172.27.9.23/recaptcha/api/siteverify
+    secret:
+      lrc: 6Lef7JcfAAAAAKFN2Wta__cXutJ4wCMeCadxl3Eq
+---
+spring:
+  config:
     import: classpath:aws-properties-dev.yml, classpath:springdoc.yml
     activate:
       on-profile: dev
