@@ -31,7 +31,7 @@ public enum ErrorCode {
   AUTHENTICATION_FAIL("Fail Authentication"),
   AUTHORIZATION_FAIL("Fail Authorization"),
 
-
+  NOT_ACCESS_IP("Invalid access IP."),
   MAXIMUM_AUTH_ATTEMPTS_EXCEEDED("maximum authentication attempts exceeded"),
   MAXIMUM_AUTHENTICATION_FAIL("Maximum authentication fail."),
   USER_ACCOUNT_EMAIL_VALID("Email verification required."),

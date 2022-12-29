@@ -33,3 +33,5 @@ cloud:
       endpoint: https://sqs.ap-northeast-2.amazonaws.com
       authorization:
         queue-name: authorization_queue_prod.fifo
+      accessip:
+        queue-name: access_ip_queue_prod.fifo

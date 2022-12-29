@@ -68,7 +68,8 @@ logging:
 mail:
   logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
   login-url: http://localhost:3000/
-
+ip:
+  allow: true
 google:
   recaptcha:
     verify:
@@ -94,7 +95,8 @@ logging:
 mail:
   logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
   login-url: http://localhost:3000/
-
+ip:
+  allow: true
 google:
   recaptcha:
     verify:
@@ -112,7 +114,8 @@ logging:
 mail:
   logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
   login-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com
-
+ip:
+  allow: false
 google:
   recaptcha:
     verify:
@@ -130,7 +133,8 @@ logging:
 mail:
   logo-url: https://smartadmin.bithumbsystems.com/images/maillogo.png
   login-url: https://smartadmin.bithumbsystems.com
-
+ip:
+  allow: true
 google:
   recaptcha:
     verify:
@@ -148,7 +152,8 @@ logging:
 mail:
   logo-url: https://smartadmin.bithumbsystems.com/images/maillogo.png
   login-url: https://smartadmin.bithumbsystems.com
-
+ip:
+  allow: true
 google:
   recaptcha:
     verify:
@@ -166,7 +171,8 @@ logging:
 mail:
   logo-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com/images/maillogo.png
   login-url: http://k8s-systemsd-systemsm-5b1ad0cbb7-1915523199.ap-northeast-2.elb.amazonaws.com
-
+ip:
+  allow: false
 google:
   recaptcha:
     verify:
@@ -185,7 +191,8 @@ springdoc:
 mail:
   logo-url: https://smartadmin.bithumb.com/images/maillogo.png
   login-url: https://smartadmin.bithumb.com
-
+ip:
+  allow: false
 google:
   recaptcha:
     verify:
