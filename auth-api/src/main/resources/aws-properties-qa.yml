@@ -32,4 +32,6 @@ cloud:
     sqs:
       endpoint: https://vpce-07a90f7df933a6c14-35ehn7t3.sqs.ap-northeast-2.vpce.amazonaws.com
       authorization:
-        queue-name: authorization_queue_qa.fifo
+        queue-name: bs-authorization_queue_qa.fifo
+      accessip:
+        queue-name: bs-access_ip_queue_qa.fifo

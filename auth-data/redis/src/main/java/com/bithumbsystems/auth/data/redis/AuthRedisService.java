@@ -3,6 +3,8 @@ package com.bithumbsystems.auth.data.redis;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.ReactiveRedisCallback;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -16,6 +18,8 @@ import reactor.core.publisher.Mono;
 public class AuthRedisService{
 
   private final ReactiveStringRedisTemplate redisTemplate;
+  //private final ReactiveRedisTemplate<String, Object> redisObjectTemlate;
+
 
   /**
    * Redis Key 정보를 저장한다.
@@ -135,5 +139,13 @@ public class AuthRedisService{
     return delete("ROLE_" + roleManagementId).then(
         redisTemplate.opsForValue().set("ROLE_" + roleManagementId, programString, Duration.ofSeconds(1800))
     );
+  }
+
+  public Mono<Boolean> saveAccessIpList(String accessIpKey, String accessIpList) {
+      return redisTemplate.opsForValue().set(accessIpKey, accessIpList);
+  }
+
+  public Mono<String> getAccessIpList(String accessIpKey) {
+    return getValue(accessIpKey);
   }
 }

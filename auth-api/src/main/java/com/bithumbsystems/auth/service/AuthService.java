@@ -1,6 +1,7 @@
 package com.bithumbsystems.auth.service;
 
 import static com.bithumbsystems.auth.core.model.enums.ErrorCode.AUTHORIZATION_FAIL;
+import static com.bithumbsystems.auth.core.model.enums.ErrorCode.NOT_ACCESS_IP;
 
 import com.bithumbsystems.auth.api.config.properties.JwtProperties;
 import com.bithumbsystems.auth.api.exception.authorization.DuplicatedLoginException;
@@ -9,6 +10,9 @@ import com.bithumbsystems.auth.core.model.auth.VerificationResult;
 import com.bithumbsystems.auth.core.model.enums.ErrorCode;
 import com.bithumbsystems.auth.core.model.enums.ResultCode;
 import com.bithumbsystems.auth.core.model.request.TokenValidationRequest;
+import com.bithumbsystems.auth.core.model.response.AccessIpResponse;
+import com.bithumbsystems.auth.core.model.response.IpData;
+import com.bithumbsystems.auth.core.util.IpAddressMatcher;
 import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.data.authentication.entity.RsaCipherInfo;
 import com.bithumbsystems.auth.data.authentication.service.RoleManagementDomainService;
@@ -16,12 +20,17 @@ import com.bithumbsystems.auth.data.authentication.service.RsaCipherInfoDomainSe
 import com.bithumbsystems.auth.data.authorization.service.AuthorizationService;
 import com.bithumbsystems.auth.data.redis.AuthRedisService;
 import com.bithumbsystems.auth.service.cipher.RsaCipherService;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.AntPathMatcher;
@@ -68,6 +77,8 @@ public class AuthService {
       "SUPER_ADMIN",
       "SUPER-ADMIN");
 
+    @Value("${ip.allow}")
+    private boolean isAccessIp;
   /**
    * Authorize
    *
@@ -76,26 +87,94 @@ public class AuthService {
    */
   public Mono<String> authorize(Mono<TokenValidationRequest> tokenRequest) {
     return tokenRequest
-        .flatMap(this::tokenValidate)
-        .flatMap(verificationResult -> checkAvailableResource(verificationResult)
-            .flatMap(isAccess -> {
-              if (Boolean.FALSE.equals(isAccess)) {
-                return Mono.error(new UnauthorizedResourceException(AUTHORIZATION_FAIL));
-              }
-              return Mono.just(verificationResult);
-            }))
-        .flatMap(verificationResult -> {
-          var key = verificationResult.claims.getIssuer();
-          if (verificationResult.claims.get("ROLE").equals("USER")) {
-            key += "::LRC";
-          }
+            .flatMap(tokenValidationRequest -> Mono.just(tokenValidationRequest)
+                    .flatMap(this::tokenValidate)
+                    .flatMap(verificationResult -> checkAvailableResource(verificationResult)
+                            .flatMap(isAccess -> {
+                                if (Boolean.FALSE.equals(isAccess)) {
+                                    return Mono.error(new UnauthorizedResourceException(AUTHORIZATION_FAIL));
+                                }
+                                return Mono.just(verificationResult);
+                            }))
+                    .flatMap(verificationResult -> checkAccessIp(tokenValidationRequest, verificationResult)
+                            .flatMap(isAccess -> {
+                                if (Boolean.FALSE.equals(isAccess)) {
+                                    return Mono.error(new UnauthorizedResourceException(NOT_ACCESS_IP));
+                                }
+                                return Mono.just(verificationResult);
+                            })
+                    )
+                    .flatMap(verificationResult -> {
+                        var key = verificationResult.claims.getIssuer();
+                        if (verificationResult.claims.get("ROLE").equals("USER")) {
+                            key += "::LRC";
+                        }
 
-          return authRedisService.getToken(key)
-              .filter(token -> token.equals(verificationResult.token))
-              .map(token -> ResultCode.SUCCESS.name())
-              .switchIfEmpty(
-                  Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
-        });
+                        return authRedisService.getToken(key)
+                                .filter(token -> token.equals(verificationResult.token))
+                                .map(token -> ResultCode.SUCCESS.name())
+                                .switchIfEmpty(
+                                        Mono.error(new DuplicatedLoginException(ErrorCode.USER_ALREADY_LOGIN)));
+                    }));
+
+  }
+
+    /**
+     * redis 에 저장된 allow ip 대역을 체크해서 접근가능한 IP 대역인지 확인한다.
+     *
+     * @param request
+     * @param verificationResult
+     * @return
+     */
+  private Mono<Boolean> checkAccessIp(TokenValidationRequest request, VerificationResult verificationResult) {
+      log.debug("### checkAccessIp called....{}", isAccessIp);
+      if (!isAccessIp) {
+          return Mono.just(true);
+      } else {
+          log.debug("### VerificationResult => {}", verificationResult);
+
+          return Mono.just(request).flatMap(result -> {
+              log.debug("### TokenValidationRequest => {}", request);
+              var key = verificationResult.claims.getIssuer(); // user email
+              if (verificationResult.claims.get("ROLE").equals("USER")) {
+                  return Mono.just(true);
+              } else {
+                  // IP check : mySiteId, siteId, userIp
+                  String accessKey = "ACCESSIP::"+ result.getMySiteId()+"::"+verificationResult.claims.get("account_id").toString();
+
+                  log.debug("### accessKey => {}", accessKey);
+                  log.debug("### check IP => {}", result.getUserIp());
+
+                  return authRedisService.getCheckKey(accessKey)
+                          .flatMap(res -> {
+                              if (res) { // key 가 존재하면..
+                                  return authRedisService.getAccessIpList(accessKey)
+                                          .flatMap(r -> {
+                                              // String (JSON) => Object convert
+                                              Gson gson = new Gson();
+                                              AccessIpResponse accessIpResponse = gson.fromJson(r, AccessIpResponse.class);
+                                              log.debug("### accessIpResponse => {}", accessIpResponse);
+                                              for (IpData ipData : accessIpResponse.getAccessIpRequests()) {
+                                                  log.debug("### IpData => {}", ipData);
+                                                  IpAddressMatcher ipAddressMatcher = new IpAddressMatcher(ipData.getAllowIp());
+                                                  if (ipAddressMatcher.matches(result.getUserIp())) {
+                                                      log.debug("# allow ip ok...");
+                                                      LocalDate toDay = LocalDate.now();
+                                                      // 유효일자 체크
+                                                      return Mono.just(toDay.isAfter(ipData.getValidStartDate()) && toDay.isBefore(ipData.getValidEndDate()));
+                                                  }
+                                              }
+                                              log.debug("# allow ip not ok");
+                                              return Mono.just(false);
+                                          });
+                              } else {   // key 가 존재하지 않으면..체크 하면 안된다.
+                                  log.debug("### not found key....");
+                                  return Mono.just(true);
+                              }
+                          });
+              }
+          });
+      }
   }
 
   private Mono<Boolean> checkAvailableResource(VerificationResult verificationResult) {

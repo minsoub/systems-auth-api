@@ -41,7 +41,7 @@ public class AwsConfig {
 
   @PostConstruct
   public void init() {
-    if (activeProfiles.equals("local") || activeProfiles.equals("default")) {
+    if (activeProfiles.equals("local") || activeProfiles.equals("localstack") || activeProfiles.equals("default")) {
       kmsAsyncClient = KmsAsyncClient.builder()
           .region(Region.of(awsProperties.getRegion()))
           .credentialsProvider(ProfileCredentialsProvider.create(profileName))
@@ -62,7 +62,7 @@ public class AwsConfig {
         awsProperties.getSqsEndPoint(),
         awsProperties.getRegion()
     );
-    if (activeProfiles.equals("local") || activeProfiles.equals("default")) {
+    if (activeProfiles.equals("local") || activeProfiles.equals("localstack") || activeProfiles.equals("default")) {
       return AmazonSQSAsyncClientBuilder.standard()
           .withCredentials(provider)
           .withEndpointConfiguration(endpointConfig)

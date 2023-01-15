@@ -16,5 +16,6 @@ public class TokenValidationRequest {
     private String requestUri;
     private String userIp;
     private String siteId;
+    private String mySiteId;
     private String activeRole;
 }
