@@ -19,6 +19,7 @@ import com.bithumbsystems.auth.data.redis.service.OtpCheckDomainService;
 import com.bithumbsystems.auth.data.redis.service.OtpHistoryDomainService;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -118,22 +119,22 @@ public class OtpService {
         .switchIfEmpty(Mono.just("0"))
         .publishOn(Schedulers.boundedElastic())
         .map(failCount -> {
-          int fail = Integer.parseInt(failCount);
-          if (fail > 4) {
-            adminAccountDomainService.findById(accountId)
-                .flatMap(adminAccount -> {
+          AtomicInteger fail = new AtomicInteger(Integer.parseInt(failCount));
+          adminAccountDomainService.findById(accountId)
+              .flatMap(adminAccount -> {
+                if(adminAccount.getStatus().equals(Status.INIT_OTP_REQUEST)){
+                  fail.set(0);
+                } else if(fail.get() > 4){
                   adminAccount.setStatus(Status.INIT_OTP_REQUEST);
                   adminAccount.setOtpSecretKey(null);
-                  return adminAccountDomainService.save(adminAccount);
-                }).subscribe();
-            return OtpCheck.builder()
-                .id(otpCheckId)
-                .failCount("0").build();
-          } else {
-            return OtpCheck.builder()
-                .id(otpCheckId)
-                .failCount(String.valueOf(fail + 1)).build();
-          }
+                } else {
+                  fail.incrementAndGet();
+                }
+                return adminAccountDomainService.save(adminAccount);
+              }).subscribe();
+          return OtpCheck.builder()
+              .id(otpCheckId)
+              .failCount(String.valueOf(fail)).build();
         }).flatMap(otpCheckDomainService::save).subscribe();
   }
 
