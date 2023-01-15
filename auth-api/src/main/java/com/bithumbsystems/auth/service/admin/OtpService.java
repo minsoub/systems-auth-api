@@ -82,7 +82,9 @@ public class OtpService {
                           otpHistoryDomainService.save(OtpHistory.builder()
                               .id(request.getSiteId() + ":" + encodeKey + ":" + request.getOtpNo())
                               .build());
-
+                          otpCheckDomainService.save(OtpCheck.builder()
+                              .id("OTP_CHECK::" + result.claims.get("account_id").toString())
+                              .failCount("0").build()).subscribe();
                           // 사용자 encodeKey 저장.
                           adminAccountDomainService.findById(
                                   result.claims.get("account_id").toString())
