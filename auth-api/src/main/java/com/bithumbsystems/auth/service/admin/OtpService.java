@@ -101,34 +101,38 @@ public class OtpService {
                               }).subscribe();
                         }).flatMap(Mono::just);
                       } else {
-                        String accountId = result.claims.get("account_id").toString();
-                        String otpCheckId = "OTP_CHECK::" + accountId;
-                        otpCheckDomainService.findById(otpCheckId)
-                            .defaultIfEmpty(OtpCheck.builder()
-                                .id(otpCheckId)
-                                .failCount(0)
-                                .build())
-                            .publishOn(Schedulers.boundedElastic())
-                            .map(otpCheck -> {
-                              if (otpCheck.getFailCount() > 4) {
-                                adminAccountDomainService.findById(accountId)
-                                    .flatMap(adminAccount -> {
-                                      adminAccount.setStatus(Status.INIT_OTP_REQUEST);
-                                      adminAccount.setOtpSecretKey(null);
-                                      return adminAccountDomainService.save(adminAccount);
-                                    }).subscribe();
-                                otpCheck.setFailCount(0);
-                              } else {
-                                otpCheck.setFailCount(otpCheck.getFailCount() + 1);
-                              }
-                              return otpCheck;
-                            }).flatMap(otpCheckDomainService::save).subscribe();
+                        otpFailCheck(result.claims.get("account_id").toString());
 
                         log.debug("OTP check error");
                         return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
                       }
                     })
             );
+  }
+
+  private void otpFailCheck(String accountId) {
+    String otpCheckId = "OTP_CHECK::" + accountId;
+    otpCheckDomainService.findById(otpCheckId)
+        .switchIfEmpty(Mono.just("0"))
+        .publishOn(Schedulers.boundedElastic())
+        .map(failCount -> {
+          int fail = Integer.parseInt(failCount);
+          if (fail > 4) {
+            adminAccountDomainService.findById(accountId)
+                .flatMap(adminAccount -> {
+                  adminAccount.setStatus(Status.INIT_OTP_REQUEST);
+                  adminAccount.setOtpSecretKey(null);
+                  return adminAccountDomainService.save(adminAccount);
+                }).subscribe();
+            return OtpCheck.builder()
+                .id(otpCheckId)
+                .failCount("0").build();
+          } else {
+            return OtpCheck.builder()
+                .id(otpCheckId)
+                .failCount(String.valueOf(fail + 1)).build();
+          }
+        }).flatMap(otpCheckDomainService::save).subscribe();
   }
 
   private Mono<Void> checkExpiredOTP(OtpRequest request, String encodeKey) {

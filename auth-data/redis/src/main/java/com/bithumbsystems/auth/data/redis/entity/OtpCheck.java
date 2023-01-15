@@ -12,5 +12,5 @@ public class OtpCheck {
   @Id
   private String id;
 
-  private int failCount;
+  private String failCount;
 }
