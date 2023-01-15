@@ -128,7 +128,7 @@ public class OtpService {
                   adminAccount.setStatus(Status.INIT_OTP_REQUEST);
                   adminAccount.setOtpSecretKey(null);
                 } else {
-                  fail.incrementAndGet();
+                  fail.set(fail.incrementAndGet());
                 }
                 return adminAccountDomainService.save(adminAccount);
               }).subscribe();
