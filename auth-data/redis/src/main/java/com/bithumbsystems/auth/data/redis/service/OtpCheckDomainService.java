@@ -20,8 +20,4 @@ public class OtpCheckDomainService {
   public Mono<OtpCheck> save(OtpCheck otpCheck) {
     return otpCheckRepository.save(otpCheck);
   }
-
-  public Mono<Void> delete(String id) {
-    return otpCheckRepository.deleteById(id);
-  }
 }

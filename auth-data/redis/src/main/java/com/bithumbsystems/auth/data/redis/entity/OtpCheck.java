@@ -10,7 +10,7 @@ import org.springframework.data.redis.core.RedisHash;
 @RedisHash(value = "otp-check")
 public class OtpCheck {
   @Id
-  private String accountId;
+  private String id;
 
   private int failCount;
 }

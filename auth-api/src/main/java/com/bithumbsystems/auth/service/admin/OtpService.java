@@ -102,9 +102,10 @@ public class OtpService {
                         }).flatMap(Mono::just);
                       } else {
                         String accountId = result.claims.get("account_id").toString();
-                        otpCheckDomainService.findById(accountId)
+                        String otpCheckId = "OTP_CHECK::" + accountId;
+                        otpCheckDomainService.findById(otpCheckId)
                             .defaultIfEmpty(OtpCheck.builder()
-                                .accountId(accountId)
+                                .id(otpCheckId)
                                 .failCount(0)
                                 .build())
                             .publishOn(Schedulers.boundedElastic())
