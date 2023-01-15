@@ -3,6 +3,7 @@ package com.bithumbsystems.auth.data.authentication.service;
 import com.bithumbsystems.auth.data.authentication.entity.AdminAccount;
 import com.bithumbsystems.auth.data.authentication.repository.AdminAccountRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -10,6 +11,7 @@ import reactor.core.publisher.Mono;
  * The type Admin account domain service.
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AdminAccountDomainService {
     private final AdminAccountRepository repository;
