@@ -19,6 +19,7 @@ public class OtpCheckDomainService {
   }
 
   public Mono<Boolean> save(OtpCheck otpCheck) {
+    log.info(otpCheck.toString());
     return redisTemplate.opsForValue().set(otpCheck.getId(), otpCheck.getFailCount());
   }
 }

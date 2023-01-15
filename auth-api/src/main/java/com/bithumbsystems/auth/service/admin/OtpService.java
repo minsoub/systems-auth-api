@@ -133,7 +133,7 @@ public class OtpService {
                 Mono.just(OtpCheck.builder()
                     .id(otpCheckId)
                     .failCount(String.valueOf(fail)).build())
-              ).flatMap(otpCheckDomainService::save);
+              ).flatMap(otpCheckDomainService::save).subscribe();
         }).subscribe();
   }
 
