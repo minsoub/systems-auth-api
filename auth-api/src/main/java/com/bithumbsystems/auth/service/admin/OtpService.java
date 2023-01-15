@@ -119,7 +119,6 @@ public class OtpService {
         .map(failCount -> {
           AtomicInteger fail = new AtomicInteger(Integer.parseInt(failCount));
           return adminAccountDomainService.findById(accountId)
-              .publishOn(Schedulers.boundedElastic())
               .flatMap(adminAccount -> {
                 if(adminAccount.getStatus().equals(Status.INIT_OTP_REQUEST)){
                   fail.set(0);
@@ -130,13 +129,12 @@ public class OtpService {
                   fail.incrementAndGet();
                 }
                 log.info("fail:" + fail);
-                adminAccountDomainService.save(adminAccount).subscribe();
-                return Mono.empty();
-              }).flatMap( account ->
-                  otpCheckDomainService.save(OtpCheck.builder()
+                var updateAdmin = adminAccountDomainService.save(adminAccount);
+                var updateOtpCheck = otpCheckDomainService.save(OtpCheck.builder()
                     .id(otpCheckId)
-                    .failCount(String.valueOf(fail)).build())
-              ).subscribe();
+                    .failCount(String.valueOf(fail)).build());
+                return Mono.zip(updateAdmin,updateOtpCheck);
+              }).subscribe();
         }).subscribe();
   }
 
