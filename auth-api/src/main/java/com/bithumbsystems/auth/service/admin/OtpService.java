@@ -59,8 +59,6 @@ public class OtpService {
             .then(
                 JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
                     .publishOn(Schedulers.boundedElastic())
-                    .publishOn(Schedulers.boundedElastic())
-                    .publishOn(Schedulers.boundedElastic())
                     .flatMap(result -> {
                       // success token validation check
                       // otp validation check
@@ -120,7 +118,7 @@ public class OtpService {
         .publishOn(Schedulers.boundedElastic())
         .map(failCount -> {
           AtomicInteger fail = new AtomicInteger(Integer.parseInt(failCount));
-          adminAccountDomainService.findById(accountId)
+          return adminAccountDomainService.findById(accountId)
               .flatMap(adminAccount -> {
                 if(adminAccount.getStatus().equals(Status.INIT_OTP_REQUEST)){
                   fail.set(0);
@@ -131,11 +129,12 @@ public class OtpService {
                   fail.set(fail.get() + 1);
                 }
                 return adminAccountDomainService.save(adminAccount);
-              }).subscribe();
-          return OtpCheck.builder()
-              .id(otpCheckId)
-              .failCount(String.valueOf(fail)).build();
-        }).flatMap(otpCheckDomainService::save).subscribe();
+              }).then(
+                Mono.just(OtpCheck.builder()
+                    .id(otpCheckId)
+                    .failCount(String.valueOf(fail)).build())
+              ).flatMap(otpCheckDomainService::save);
+        }).subscribe();
   }
 
   private Mono<Void> checkExpiredOTP(OtpRequest request, String encodeKey) {
