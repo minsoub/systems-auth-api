@@ -13,7 +13,9 @@ import com.bithumbsystems.auth.core.util.JwtVerifyUtil;
 import com.bithumbsystems.auth.core.util.OtpUtil;
 import com.bithumbsystems.auth.data.authentication.enums.Status;
 import com.bithumbsystems.auth.data.authentication.service.AdminAccountDomainService;
+import com.bithumbsystems.auth.data.redis.entity.OtpCheck;
 import com.bithumbsystems.auth.data.redis.entity.OtpHistory;
+import com.bithumbsystems.auth.data.redis.service.OtpCheckDomainService;
 import com.bithumbsystems.auth.data.redis.service.OtpHistoryDomainService;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -35,6 +37,7 @@ public class OtpService {
   private final AdminTokenService adminTokenService;
   private final AdminAccountDomainService adminAccountDomainService;
   private final OtpHistoryDomainService otpHistoryDomainService;
+  private final OtpCheckDomainService otpCheckDomainService;
 
   private final AwsConfig config;
 
@@ -53,14 +56,15 @@ public class OtpService {
     return
         checkExpiredOTP(request, encodeKey)
             .then(
-
                 JwtVerifyUtil.check(request.getToken(), jwtProperties.getSecret())
+                    .publishOn(Schedulers.boundedElastic())
+                    .publishOn(Schedulers.boundedElastic())
+                    .publishOn(Schedulers.boundedElastic())
                     .flatMap(result -> {
                       // success token validation check
                       // otp validation check
                       log.debug("jwt validation check completed : {}", result);
-                      if (OtpUtil.otpCheckCode(request.getOtpNo(),
-                          encodeKey)) { // request.getEncodeKey())) {
+                      if (OtpUtil.otpCheckCode(request.getOtpNo(), encodeKey)) {
                         // 2차 토큰 생성
                         log.debug("2차 토큰 생성");
 
@@ -97,6 +101,28 @@ public class OtpService {
                               }).subscribe();
                         }).flatMap(Mono::just);
                       } else {
+                        String accountId = result.claims.get("account_id").toString();
+                        otpCheckDomainService.findById(accountId)
+                            .defaultIfEmpty(OtpCheck.builder()
+                                .accountId(accountId)
+                                .failCount(0)
+                                .build())
+                            .publishOn(Schedulers.boundedElastic())
+                            .map(otpCheck -> {
+                              if (otpCheck.getFailCount() > 4) {
+                                adminAccountDomainService.findById(accountId)
+                                    .flatMap(adminAccount -> {
+                                      adminAccount.setStatus(Status.INIT_OTP_REQUEST);
+                                      adminAccount.setOtpSecretKey(null);
+                                      return adminAccountDomainService.save(adminAccount);
+                                    }).subscribe();
+                                otpCheck.setFailCount(0);
+                              } else {
+                                otpCheck.setFailCount(otpCheck.getFailCount() + 1);
+                              }
+                              return otpCheck;
+                            }).flatMap(otpCheckDomainService::save).subscribe();
+
                         log.debug("OTP check error");
                         return Mono.error(new UnauthorizedException(INVALID_OTP_NUMBER));
                       }

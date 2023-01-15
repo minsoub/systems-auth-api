@@ -7,9 +7,10 @@ import org.springframework.data.redis.core.RedisHash;
 
 @Data
 @Builder
-@RedisHash(value = "otp-history", timeToLive = (long) 60)
-public class OtpHistory {
-
+@RedisHash(value = "otp-check")
+public class OtpCheck {
   @Id
-  private String id;
+  private String accountId;
+
+  private int failCount;
 }
